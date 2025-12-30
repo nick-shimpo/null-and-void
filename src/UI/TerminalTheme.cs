@@ -129,14 +129,15 @@ public static class TerminalTheme
     }
 
     /// <summary>
-    /// Create a StyleBoxFlat with terminal panel styling
+    /// Create a StyleBoxFlat with terminal panel styling and glow effect
     /// </summary>
     public static StyleBoxFlat CreatePanelStyle(bool highlighted = false)
     {
+        var borderColor = highlighted ? Primary : PrimaryDim;
         var style = new StyleBoxFlat
         {
             BgColor = highlighted ? BackgroundHighlight : BackgroundPanel,
-            BorderColor = highlighted ? BorderBright : Border,
+            BorderColor = borderColor,
             BorderWidthLeft = 1,
             BorderWidthTop = 1,
             BorderWidthRight = 1,
@@ -144,34 +145,61 @@ public static class TerminalTheme
             CornerRadiusTopLeft = 0,
             CornerRadiusTopRight = 0,
             CornerRadiusBottomLeft = 0,
-            CornerRadiusBottomRight = 0
+            CornerRadiusBottomRight = 0,
+            // Glow effect via shadow
+            ShadowColor = new Color(borderColor.R, borderColor.G, borderColor.B, 0.25f),
+            ShadowOffset = Vector2.Zero,
+            ShadowSize = highlighted ? 6 : 3
         };
         return style;
     }
 
     /// <summary>
-    /// Create a StyleBoxFlat for terminal buttons
+    /// Create a StyleBoxFlat for terminal buttons with glow
     /// </summary>
     public static StyleBoxFlat CreateButtonStyle(bool pressed = false, bool hover = false)
     {
+        var borderColor = pressed ? Primary : (hover ? PrimaryBright : PrimaryDim);
         var style = new StyleBoxFlat
         {
-            BgColor = pressed ? BackgroundHighlight : (hover ? new Color(0.06f, 0.1f, 0.06f) : BackgroundPanel),
-            BorderColor = pressed ? PrimaryDim : Border,
+            BgColor = pressed ? BackgroundHighlight : (hover ? new Color(0.06f, 0.12f, 0.06f) : BackgroundPanel),
+            BorderColor = borderColor,
             BorderWidthLeft = 1,
             BorderWidthTop = 1,
             BorderWidthRight = 1,
             BorderWidthBottom = 1,
-            ContentMarginLeft = 8,
-            ContentMarginRight = 8,
-            ContentMarginTop = 4,
-            ContentMarginBottom = 4
+            ContentMarginLeft = 10,
+            ContentMarginRight = 10,
+            ContentMarginTop = 6,
+            ContentMarginBottom = 6,
+            // Glow effect
+            ShadowColor = new Color(borderColor.R, borderColor.G, borderColor.B, hover ? 0.4f : 0.2f),
+            ShadowOffset = Vector2.Zero,
+            ShadowSize = hover ? 5 : 2
         };
         return style;
     }
 
     /// <summary>
-    /// Apply terminal styling to a Label
+    /// Create LabelSettings with glowing text effect
+    /// </summary>
+    public static LabelSettings CreateGlowingLabelSettings(Color textColor, int fontSize = 14)
+    {
+        return new LabelSettings
+        {
+            FontColor = textColor,
+            FontSize = fontSize,
+            OutlineColor = new Color(textColor.R * 0.6f, textColor.G * 0.6f, textColor.B * 0.6f, 0.6f),
+            OutlineSize = 1,
+            // Glow effect via centered shadow
+            ShadowColor = new Color(textColor.R, textColor.G, textColor.B, 0.35f),
+            ShadowOffset = Vector2.Zero,
+            ShadowSize = 3
+        };
+    }
+
+    /// <summary>
+    /// Apply terminal styling to a Label (basic, no glow)
     /// </summary>
     public static void StyleLabel(Label label, Color? color = null, int fontSize = 14)
     {
@@ -180,7 +208,15 @@ public static class TerminalTheme
     }
 
     /// <summary>
-    /// Apply terminal styling to a Button
+    /// Apply terminal styling to a Label with glow effect
+    /// </summary>
+    public static void StyleLabelGlow(Label label, Color? color = null, int fontSize = 14)
+    {
+        label.LabelSettings = CreateGlowingLabelSettings(color ?? TextPrimary, fontSize);
+    }
+
+    /// <summary>
+    /// Apply terminal styling to a Button with glow
     /// </summary>
     public static void StyleButton(Button button)
     {
@@ -195,9 +231,17 @@ public static class TerminalTheme
     }
 
     /// <summary>
-    /// Apply terminal styling to a Panel
+    /// Apply terminal styling to a Panel with glow
     /// </summary>
     public static void StylePanel(Panel panel, bool highlighted = false)
+    {
+        panel.AddThemeStyleboxOverride("panel", CreatePanelStyle(highlighted));
+    }
+
+    /// <summary>
+    /// Apply terminal styling to a PanelContainer with glow
+    /// </summary>
+    public static void StylePanelContainer(PanelContainer panel, bool highlighted = false)
     {
         panel.AddThemeStyleboxOverride("panel", CreatePanelStyle(highlighted));
     }

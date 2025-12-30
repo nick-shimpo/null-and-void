@@ -156,6 +156,7 @@ size_flags_vertical = 3
 [node name="ItemDesc" type="Label" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/DescScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 text = "Select an item to view details."
 autowrap_mode = 2
 

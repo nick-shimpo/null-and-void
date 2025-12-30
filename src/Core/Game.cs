@@ -67,15 +67,15 @@ public partial class Game : Node2D
 
     private void ApplyTerminalStyling()
     {
-        // Style TopBar
+        // Style TopBar with glow
         if (_topBar != null)
-            TerminalTheme.StylePanel(_topBar);
+            TerminalTheme.StylePanel(_topBar, highlighted: true);
 
-        // Style labels
+        // Style labels with glow effects
         if (_healthLabel != null)
-            TerminalTheme.StyleLabel(_healthLabel, TerminalTheme.Primary, 14);
+            TerminalTheme.StyleLabelGlow(_healthLabel, TerminalTheme.Primary, 14);
         if (_turnLabel != null)
-            TerminalTheme.StyleLabel(_turnLabel, TerminalTheme.Primary, 14);
+            TerminalTheme.StyleLabelGlow(_turnLabel, TerminalTheme.Primary, 14);
         if (_positionLabel != null)
             TerminalTheme.StyleLabel(_positionLabel, TerminalTheme.PrimaryDim, 14);
     }
@@ -277,12 +277,12 @@ public partial class Game : Node2D
         {
             _healthLabel.Text = TerminalTheme.FormatStatus("HP", $"{_player.CurrentHealth}/{_player.MaxHealth}");
 
-            // Color based on health percentage
+            // Color based on health percentage - update glow color
             float healthPercent = (float)_player.CurrentHealth / _player.MaxHealth;
             Color healthColor = healthPercent > 0.5f ? TerminalTheme.Primary :
                                healthPercent > 0.25f ? TerminalTheme.AlertWarning :
                                TerminalTheme.AlertDanger;
-            _healthLabel.AddThemeColorOverride("font_color", healthColor);
+            TerminalTheme.StyleLabelGlow(_healthLabel, healthColor, 14);
         }
 
         if (_positionLabel != null && _player != null)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://game_scene"]
+[gd_scene load_steps=10 format=3 uid="uid://game_scene"]
 
 [ext_resource type="Script" path="res://src/Core/Game.cs" id="1_game"]
 [ext_resource type="Script" path="res://src/Entities/Player.cs" id="2_player"]
@@ -6,6 +6,16 @@
 [ext_resource type="Script" path="res://src/UI/MessageLog.cs" id="4_msglog"]
 [ext_resource type="Script" path="res://src/UI/EquipmentBar.cs" id="5_equipbar"]
 [ext_resource type="PackedScene" uid="uid://inventory_screen" path="res://scenes/InventoryScreen.tscn" id="6_invscreen"]
+[ext_resource type="Shader" path="res://assets/shaders/crt.gdshader" id="7_crt"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("7_crt")
+shader_parameter/scanline_strength = 0.12
+shader_parameter/scanline_frequency = 400.0
+shader_parameter/vignette_strength = 0.25
+shader_parameter/glow_strength = 0.08
+shader_parameter/noise_strength = 0.015
+shader_parameter/aberration_strength = 0.001
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
@@ -131,3 +141,15 @@ grow_vertical = 0
 script = ExtResource("5_equipbar")
 
 [node name="InventoryScreen" parent="UI" instance=ExtResource("6_invscreen")]
+
+[node name="CRTEffect" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="CRTOverlay" type="ColorRect" parent="CRTEffect"]
+material = SubResource("ShaderMaterial_crt")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

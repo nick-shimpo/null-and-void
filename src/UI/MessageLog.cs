@@ -54,8 +54,8 @@ public partial class MessageLog : Control
             HorizontalAlignment = HorizontalAlignment.Left
         };
 
-        // Apply terminal styling
-        TerminalTheme.StyleLabel(label, color ?? TerminalTheme.Primary, 12);
+        // Apply terminal styling with glow
+        TerminalTheme.StyleLabelGlow(label, color ?? TerminalTheme.Primary, 12);
 
         _container.AddChild(label);
         _messageLabels.Enqueue(label);

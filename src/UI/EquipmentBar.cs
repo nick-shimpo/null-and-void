@@ -117,13 +117,13 @@ public partial class EquipmentBar : Control
         vbox.AddThemeConstantOverride("separation", 2);
         marginContainer.AddChild(vbox);
 
-        // Slot type label (e.g., "[CORE 1]")
+        // Slot type label (e.g., "[CORE 1]") - with glow
         var typeLabel = new Label
         {
             Text = TerminalTheme.FormatSlotType(slot.SlotType, slot.Index),
             HorizontalAlignment = HorizontalAlignment.Center
         };
-        TerminalTheme.StyleLabel(typeLabel, TerminalTheme.GetSlotColor(slot.SlotType), 11);
+        TerminalTheme.StyleLabelGlow(typeLabel, TerminalTheme.GetSlotColor(slot.SlotType), 11);
         vbox.AddChild(typeLabel);
 
         // Item name or empty indicator
@@ -135,7 +135,7 @@ public partial class EquipmentBar : Control
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
             };
-            TerminalTheme.StyleLabel(nameLabel, TerminalTheme.GetRarityColor(slot.Item.Rarity), 12);
+            TerminalTheme.StyleLabelGlow(nameLabel, TerminalTheme.GetRarityColor(slot.Item.Rarity), 12);
             vbox.AddChild(nameLabel);
 
             // Stats line

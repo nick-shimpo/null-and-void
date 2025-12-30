@@ -59,9 +59,9 @@ public partial class InventoryScreen : Control
 
     private void ApplyTerminalStyling()
     {
-        // Style main panel
+        // Style main panel with glow
         if (_mainPanel != null)
-            TerminalTheme.StylePanel(_mainPanel);
+            TerminalTheme.StylePanel(_mainPanel, highlighted: true);
 
         // Style all sub-panels
         var inventoryPanel = GetNodeOrNull<Panel>("MainPanel/VBoxContainer/HSplit/InventoryPanel");
@@ -72,18 +72,18 @@ public partial class InventoryScreen : Control
         if (equipmentPanel != null) TerminalTheme.StylePanel(equipmentPanel);
         if (detailsPanel != null) TerminalTheme.StylePanel(detailsPanel);
 
-        // Style headers
+        // Style headers with glow
         var titleLabel = GetNodeOrNull<Label>("MainPanel/VBoxContainer/TitleBar/Title");
         var invHeader = GetNodeOrNull<Label>("MainPanel/VBoxContainer/HSplit/InventoryPanel/VBox/Header");
         var equipHeader = GetNodeOrNull<Label>("MainPanel/VBoxContainer/HSplit/EquipmentPanel/VBox/Header");
         var detailsHeader = GetNodeOrNull<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/Header");
 
-        if (titleLabel != null) TerminalTheme.StyleLabel(titleLabel, TerminalTheme.PrimaryBright, 18);
-        if (invHeader != null) TerminalTheme.StyleLabel(invHeader, TerminalTheme.Primary, 14);
-        if (equipHeader != null) TerminalTheme.StyleLabel(equipHeader, TerminalTheme.Primary, 14);
-        if (detailsHeader != null) TerminalTheme.StyleLabel(detailsHeader, TerminalTheme.Primary, 14);
+        if (titleLabel != null) TerminalTheme.StyleLabelGlow(titleLabel, TerminalTheme.PrimaryBright, 20);
+        if (invHeader != null) TerminalTheme.StyleLabelGlow(invHeader, TerminalTheme.Primary, 14);
+        if (equipHeader != null) TerminalTheme.StyleLabelGlow(equipHeader, TerminalTheme.Primary, 14);
+        if (detailsHeader != null) TerminalTheme.StyleLabelGlow(detailsHeader, TerminalTheme.Primary, 14);
 
-        // Style buttons
+        // Style buttons with glow
         if (_closeButton != null) TerminalTheme.StyleButton(_closeButton);
         if (_equipButton != null) TerminalTheme.StyleButton(_equipButton);
         if (_unequipButton != null) TerminalTheme.StyleButton(_unequipButton);
@@ -105,16 +105,34 @@ public partial class InventoryScreen : Control
 
     public void Open()
     {
-        Visible = true;
         _selectedItem = null;
         RefreshDisplay();
         ClearSelection();
+
+        // Fade in animation
+        Modulate = new Color(1, 1, 1, 0);
+        Visible = true;
+
+        var tween = CreateTween();
+        tween.SetTrans(Tween.TransitionType.Cubic);
+        tween.SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(this, "modulate:a", 1.0f, 0.2f);
+
         GameState.Instance.TransitionTo(GameState.State.Inventory);
     }
 
-    public void Close()
+    public async void Close()
     {
+        // Fade out animation
+        var tween = CreateTween();
+        tween.SetTrans(Tween.TransitionType.Cubic);
+        tween.SetEase(Tween.EaseType.In);
+        tween.TweenProperty(this, "modulate:a", 0.0f, 0.15f);
+
+        await ToSignal(tween, Tween.SignalName.Finished);
+
         Visible = false;
+        Modulate = new Color(1, 1, 1, 1); // Reset for next open
         GameState.Instance.TransitionTo(GameState.State.Playing);
     }
 
@@ -181,13 +199,13 @@ public partial class InventoryScreen : Control
         if (_equipmentSlots == null || _equipment == null)
             return;
 
-        // Section header
+        // Section header with glow
         var header = new Label
         {
             Text = title,
             HorizontalAlignment = HorizontalAlignment.Center
         };
-        TerminalTheme.StyleLabel(header, TerminalTheme.GetSlotColor(slotType), 12);
+        TerminalTheme.StyleLabelGlow(header, TerminalTheme.GetSlotColor(slotType), 12);
         _equipmentSlots.AddChild(header);
 
         // Slots in horizontal container
@@ -290,7 +308,7 @@ public partial class InventoryScreen : Control
         if (_selectedItem != null)
         {
             _itemNameLabel.Text = _selectedItem.Name;
-            TerminalTheme.StyleLabel(_itemNameLabel, TerminalTheme.GetRarityColor(_selectedItem.Rarity), 16);
+            TerminalTheme.StyleLabelGlow(_itemNameLabel, TerminalTheme.GetRarityColor(_selectedItem.Rarity), 16);
 
             _itemDescLabel.Text = _selectedItem.Description;
             TerminalTheme.StyleLabel(_itemDescLabel, TerminalTheme.TextSecondary, 12);
@@ -303,7 +321,7 @@ public partial class InventoryScreen : Control
                 _selectedItem.BonusSightRange
             );
             _statsLabel.Text = $"Slot: [{_selectedItem.SlotType}]  Rarity: [{_selectedItem.Rarity}]\n{statsText}";
-            TerminalTheme.StyleLabel(_statsLabel, TerminalTheme.Primary, 11);
+            TerminalTheme.StyleLabelGlow(_statsLabel, TerminalTheme.Primary, 11);
 
             // Show appropriate button
             _equipButton.Visible = !_selectedFromEquipment;
