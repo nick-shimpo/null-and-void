@@ -19,182 +19,166 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.05, 0.05, 0.08, 0.95)
+color = Color(0.02, 0.04, 0.02, 0.98)
 
 [node name="MainPanel" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 50.0
-offset_top = 50.0
-offset_right = -50.0
-offset_bottom = -50.0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = -40.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Title" type="Label" parent="MainPanel"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 10.0
-offset_bottom = 40.0
-grow_horizontal = 2
-text = "INVENTORY & EQUIPMENT"
-horizontal_alignment = 1
-
-[node name="CloseButton" type="Button" parent="MainPanel"]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -80.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 40.0
-grow_horizontal = 0
-text = "Close [I]"
-
-[node name="HSplit" type="HSplitContainer" parent="MainPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 50.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="InventoryPanel" type="Panel" parent="MainPanel/HSplit"]
-custom_minimum_size = Vector2(350, 0)
-
-[node name="Header" type="Label" parent="MainPanel/HSplit/InventoryPanel"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 10.0
-offset_bottom = 30.0
-grow_horizontal = 2
-text = "INVENTORY"
-horizontal_alignment = 1
-
-[node name="ScrollContainer" type="ScrollContainer" parent="MainPanel/HSplit/InventoryPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 10.0
-offset_top = 40.0
+offset_top = 10.0
 offset_right = -10.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="InventoryGrid" type="GridContainer" parent="MainPanel/HSplit/InventoryPanel/ScrollContainer"]
+[node name="TitleBar" type="HBoxContainer" parent="MainPanel/VBoxContainer"]
 layout_mode = 2
+
+[node name="Title" type="Label" parent="MainPanel/VBoxContainer/TitleBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = ">> INVENTORY MANAGEMENT <<"
+horizontal_alignment = 1
+
+[node name="CloseButton" type="Button" parent="MainPanel/VBoxContainer/TitleBar"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "[CLOSE]"
+
+[node name="HSplit" type="HSplitContainer" parent="MainPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InventoryPanel" type="Panel" parent="MainPanel/VBoxContainer/HSplit"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MainPanel/VBoxContainer/HSplit/InventoryPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Header" type="Label" parent="MainPanel/VBoxContainer/HSplit/InventoryPanel/VBox"]
+layout_mode = 2
+text = ">> INVENTORY <<"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MainPanel/VBoxContainer/HSplit/InventoryPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InventoryGrid" type="GridContainer" parent="MainPanel/VBoxContainer/HSplit/InventoryPanel/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 columns = 4
 
-[node name="EquipmentPanel" type="Panel" parent="MainPanel/HSplit"]
+[node name="EquipmentPanel" type="Panel" parent="MainPanel/VBoxContainer/HSplit"]
 custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
 
-[node name="Header" type="Label" parent="MainPanel/HSplit/EquipmentPanel"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 10.0
-offset_bottom = 30.0
-grow_horizontal = 2
-text = "EQUIPPED"
-horizontal_alignment = 1
-
-[node name="EquipmentSlots" type="VBoxContainer" parent="MainPanel/HSplit/EquipmentPanel"]
+[node name="VBox" type="VBoxContainer" parent="MainPanel/VBoxContainer/HSplit/EquipmentPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 10.0
-offset_top = 40.0
+offset_top = 10.0
 offset_right = -10.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
-alignment = 1
 
-[node name="DetailsPanel" type="Panel" parent="MainPanel/HSplit"]
-custom_minimum_size = Vector2(300, 0)
-
-[node name="Header" type="Label" parent="MainPanel/HSplit/DetailsPanel"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 10.0
-offset_bottom = 30.0
-grow_horizontal = 2
-text = "DETAILS"
+[node name="Header" type="Label" parent="MainPanel/VBoxContainer/HSplit/EquipmentPanel/VBox"]
+layout_mode = 2
+text = ">> EQUIPPED <<"
 horizontal_alignment = 1
 
-[node name="ItemName" type="Label" parent="MainPanel/HSplit/DetailsPanel"]
+[node name="EquipmentSlots" type="VBoxContainer" parent="MainPanel/VBoxContainer/HSplit/EquipmentPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="DetailsPanel" type="Panel" parent="MainPanel/VBoxContainer/HSplit"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel"]
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 15
 anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = 10.0
-offset_top = 50.0
+offset_top = 10.0
 offset_right = -10.0
-offset_bottom = 80.0
+offset_bottom = -10.0
 grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Header" type="Label" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
+layout_mode = 2
+text = ">> DETAILS <<"
+horizontal_alignment = 1
+
+[node name="ItemName" type="Label" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
+layout_mode = 2
 text = "No Item Selected"
 horizontal_alignment = 1
 
-[node name="ItemDesc" type="Label" parent="MainPanel/HSplit/DetailsPanel"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 10.0
-offset_top = 90.0
-offset_right = -10.0
-offset_bottom = 200.0
-grow_horizontal = 2
+[node name="HSeparator" type="HSeparator" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
+layout_mode = 2
+
+[node name="DescScroll" type="ScrollContainer" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemDesc" type="Label" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/DescScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Select an item to view details."
 autowrap_mode = 2
 
-[node name="Stats" type="Label" parent="MainPanel/HSplit/DetailsPanel"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 10.0
-offset_top = 210.0
-offset_right = -10.0
-offset_bottom = 280.0
-grow_horizontal = 2
+[node name="Stats" type="Label" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
 
-[node name="EquipButton" type="Button" parent="MainPanel/HSplit/DetailsPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -60.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "Equip"
+[node name="Spacer" type="Control" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
 
-[node name="UnequipButton" type="Button" parent="MainPanel/HSplit/DetailsPanel"]
+[node name="ButtonContainer" type="HBoxContainer" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="EquipButton" type="Button" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/ButtonContainer"]
 visible = false
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -60.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "Unequip"
+custom_minimum_size = Vector2(100, 35)
+layout_mode = 2
+text = "[EQUIP]"
+
+[node name="UnequipButton" type="Button" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/ButtonContainer"]
+visible = false
+custom_minimum_size = Vector2(100, 35)
+layout_mode = 2
+text = "[REMOVE]"

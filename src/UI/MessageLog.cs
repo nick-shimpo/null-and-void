@@ -5,27 +5,32 @@ using NullAndVoid.Core;
 namespace NullAndVoid.UI;
 
 /// <summary>
-/// Displays game messages to the player (combat, events, etc.)
+/// Terminal-styled message log displaying game messages to the player.
 /// </summary>
 public partial class MessageLog : Control
 {
     [Export] public int MaxMessages { get; set; } = 5;
-    [Export] public Color DefaultColor { get; set; } = new Color(0.8f, 0.8f, 0.8f);
-    [Export] public Color DamageColor { get; set; } = new Color(1.0f, 0.3f, 0.3f);
-    [Export] public Color HealColor { get; set; } = new Color(0.3f, 1.0f, 0.3f);
-    [Export] public Color InfoColor { get; set; } = new Color(0.3f, 0.7f, 1.0f);
 
+    private Panel? _panel;
     private VBoxContainer? _container;
     private readonly Queue<Label> _messageLabels = new();
 
     public override void _Ready()
     {
+        _panel = GetNode<Panel>("Panel");
         _container = GetNode<VBoxContainer>("VBoxContainer");
+
+        // Apply terminal styling
+        if (_panel != null)
+            TerminalTheme.StylePanel(_panel);
 
         // Subscribe to events
         EventBus.Instance.AttackPerformed += OnAttackPerformed;
         EventBus.Instance.EntityDied += OnEntityDied;
         EventBus.Instance.EntityDamaged += OnEntityDamaged;
+
+        // Add initial message
+        AddMessage("System initialized. Ready for input.", TerminalTheme.PrimaryDim);
     }
 
     public override void _ExitTree()
@@ -45,10 +50,12 @@ public partial class MessageLog : Control
 
         var label = new Label
         {
-            Text = text,
-            Modulate = color ?? DefaultColor,
+            Text = $"> {text}",
             HorizontalAlignment = HorizontalAlignment.Left
         };
+
+        // Apply terminal styling
+        TerminalTheme.StyleLabel(label, color ?? TerminalTheme.Primary, 12);
 
         _container.AddChild(label);
         _messageLabels.Enqueue(label);
@@ -63,16 +70,16 @@ public partial class MessageLog : Control
 
     private void OnAttackPerformed(Node attacker, Node target, int damage)
     {
-        string attackerName = attacker is Entities.Entity e1 ? e1.EntityName : "Something";
-        string targetName = target is Entities.Entity e2 ? e2.EntityName : "something";
+        string attackerName = attacker is Entities.Entity e1 ? e1.EntityName : "Unknown";
+        string targetName = target is Entities.Entity e2 ? e2.EntityName : "unknown";
 
-        AddMessage($"{attackerName} hits {targetName} for {damage} damage!", DamageColor);
+        AddMessage($"{attackerName} >> {targetName} [{damage} DMG]", TerminalTheme.AlertDanger);
     }
 
     private void OnEntityDied(Node entity)
     {
-        string entityName = entity is Entities.Entity e ? e.EntityName : "Something";
-        AddMessage($"{entityName} is destroyed!", InfoColor);
+        string entityName = entity is Entities.Entity e ? e.EntityName : "Unknown";
+        AddMessage($"[DESTROYED] {entityName}", TerminalTheme.AlertInfo);
     }
 
     private void OnEntityDamaged(Node entity, int damage, int remainingHealth)

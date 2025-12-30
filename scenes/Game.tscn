@@ -124,31 +124,10 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -180.0
-offset_bottom = -120.0
+offset_top = -195.0
+offset_bottom = -125.0
 grow_horizontal = 2
 grow_vertical = 0
 script = ExtResource("5_equipbar")
-
-[node name="Panel" type="Panel" parent="UI/HUD/EquipmentBar"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="SlotsContainer" type="HBoxContainer" parent="UI/HUD/EquipmentBar"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 5.0
-offset_right = -10.0
-offset_bottom = -5.0
-grow_horizontal = 2
-grow_vertical = 2
-alignment = 1
 
 [node name="InventoryScreen" parent="UI" instance=ExtResource("6_invscreen")]

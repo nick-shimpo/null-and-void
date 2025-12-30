@@ -5,17 +5,49 @@ using NullAndVoid.Items;
 namespace NullAndVoid.UI;
 
 /// <summary>
-/// UI component showing equipped items at the bottom of the main screen.
-/// Displays 6 slots: 2 Core, 2 Utility, 2 Base with short descriptions.
+/// Terminal-styled UI component showing equipped items at the bottom of the screen.
+/// Displays 6 slots: 2 Core, 2 Utility, 2 Base with terminal formatting.
 /// </summary>
 public partial class EquipmentBar : Control
 {
     private Equipment? _equipment;
     private HBoxContainer? _slotsContainer;
+    private Panel? _backgroundPanel;
 
     public override void _Ready()
     {
-        _slotsContainer = GetNode<HBoxContainer>("SlotsContainer");
+        // Create the layout structure programmatically for full control
+        SetupLayout();
+    }
+
+    private void SetupLayout()
+    {
+        // Clear any existing children
+        foreach (var child in GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        // Background panel
+        _backgroundPanel = new Panel();
+        _backgroundPanel.SetAnchorsPreset(LayoutPreset.FullRect);
+        TerminalTheme.StylePanel(_backgroundPanel);
+        AddChild(_backgroundPanel);
+
+        // Margin container for padding
+        var margin = new MarginContainer();
+        margin.SetAnchorsPreset(LayoutPreset.FullRect);
+        margin.AddThemeConstantOverride("margin_left", 10);
+        margin.AddThemeConstantOverride("margin_right", 10);
+        margin.AddThemeConstantOverride("margin_top", 6);
+        margin.AddThemeConstantOverride("margin_bottom", 6);
+        AddChild(margin);
+
+        // Horizontal container for slots
+        _slotsContainer = new HBoxContainer();
+        _slotsContainer.Alignment = BoxContainer.AlignmentMode.Center;
+        _slotsContainer.AddThemeConstantOverride("separation", 8);
+        margin.AddChild(_slotsContainer);
     }
 
     /// <summary>
@@ -23,7 +55,6 @@ public partial class EquipmentBar : Control
     /// </summary>
     public void SetEquipment(Equipment equipment)
     {
-        // Disconnect from previous
         if (_equipment != null)
         {
             _equipment.EquipmentChanged -= OnEquipmentChanged;
@@ -54,7 +85,7 @@ public partial class EquipmentBar : Control
             child.QueueFree();
         }
 
-        // Create slot displays
+        // Create slot displays for all 6 slots
         var slots = _equipment.GetAllSlots();
         foreach (var slot in slots)
         {
@@ -63,91 +94,83 @@ public partial class EquipmentBar : Control
         }
     }
 
-    private Panel CreateSlotPanel(EquipmentSlotInfo slot)
+    private PanelContainer CreateSlotPanel(EquipmentSlotInfo slot)
     {
-        var panel = new Panel
-        {
-            CustomMinimumSize = new Vector2(180, 50)
-        };
+        // Outer panel container
+        var panelContainer = new PanelContainer();
+        panelContainer.CustomMinimumSize = new Vector2(170, 0); // Width only, height auto
 
+        // Apply terminal styling
+        var panelStyle = TerminalTheme.CreatePanelStyle(slot.Item != null);
+        panelContainer.AddThemeStyleboxOverride("panel", panelStyle);
+
+        // Margin container for internal padding
+        var marginContainer = new MarginContainer();
+        marginContainer.AddThemeConstantOverride("margin_left", 6);
+        marginContainer.AddThemeConstantOverride("margin_right", 6);
+        marginContainer.AddThemeConstantOverride("margin_top", 4);
+        marginContainer.AddThemeConstantOverride("margin_bottom", 4);
+        panelContainer.AddChild(marginContainer);
+
+        // VBox for stacking labels
         var vbox = new VBoxContainer();
-        panel.AddChild(vbox);
+        vbox.AddThemeConstantOverride("separation", 2);
+        marginContainer.AddChild(vbox);
 
-        // Slot type label
+        // Slot type label (e.g., "[CORE 1]")
         var typeLabel = new Label
         {
-            Text = GetSlotTypeName(slot.SlotType, slot.Index),
+            Text = TerminalTheme.FormatSlotType(slot.SlotType, slot.Index),
             HorizontalAlignment = HorizontalAlignment.Center
         };
-        typeLabel.AddThemeFontSizeOverride("font_size", 10);
-        typeLabel.AddThemeColorOverride("font_color", GetSlotTypeColor(slot.SlotType));
+        TerminalTheme.StyleLabel(typeLabel, TerminalTheme.GetSlotColor(slot.SlotType), 11);
         vbox.AddChild(typeLabel);
 
-        // Item name or empty
+        // Item name or empty indicator
         if (slot.Item != null)
         {
             var nameLabel = new Label
             {
                 Text = slot.Item.Name,
-                HorizontalAlignment = HorizontalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis
             };
-            nameLabel.AddThemeFontSizeOverride("font_size", 12);
-            nameLabel.AddThemeColorOverride("font_color", slot.Item.DisplayColor);
+            TerminalTheme.StyleLabel(nameLabel, TerminalTheme.GetRarityColor(slot.Item.Rarity), 12);
             vbox.AddChild(nameLabel);
 
-            // Stats
+            // Stats line
+            var statsText = TerminalTheme.FormatStats(
+                slot.Item.BonusDamage,
+                slot.Item.BonusArmor,
+                slot.Item.BonusHealth,
+                slot.Item.BonusSightRange
+            );
             var statsLabel = new Label
             {
-                Text = slot.Item.ShortDesc,
+                Text = statsText,
                 HorizontalAlignment = HorizontalAlignment.Center
             };
-            statsLabel.AddThemeFontSizeOverride("font_size", 10);
-            statsLabel.AddThemeColorOverride("font_color", new Color(0.6f, 0.6f, 0.6f));
+            TerminalTheme.StyleLabel(statsLabel, TerminalTheme.TextSecondary, 10);
             vbox.AddChild(statsLabel);
         }
         else
         {
+            // Empty slot
             var emptyLabel = new Label
             {
-                Text = "[Empty]",
+                Text = TerminalTheme.FormatEmpty(),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
-            emptyLabel.AddThemeFontSizeOverride("font_size", 11);
-            emptyLabel.AddThemeColorOverride("font_color", new Color(0.4f, 0.4f, 0.4f));
+            TerminalTheme.StyleLabel(emptyLabel, TerminalTheme.TextMuted, 11);
             vbox.AddChild(emptyLabel);
+
+            // Spacer to maintain consistent height
+            var spacer = new Control();
+            spacer.CustomMinimumSize = new Vector2(0, 14);
+            vbox.AddChild(spacer);
         }
 
-        // Position the vbox
-        vbox.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        vbox.OffsetLeft = 5;
-        vbox.OffsetTop = 2;
-        vbox.OffsetRight = -5;
-        vbox.OffsetBottom = -2;
-
-        return panel;
-    }
-
-    private string GetSlotTypeName(EquipmentSlotType slotType, int index)
-    {
-        string typeName = slotType switch
-        {
-            EquipmentSlotType.Core => "CORE",
-            EquipmentSlotType.Utility => "UTIL",
-            EquipmentSlotType.Base => "BASE",
-            _ => "????"
-        };
-        return $"{typeName} {index + 1}";
-    }
-
-    private Color GetSlotTypeColor(EquipmentSlotType slotType)
-    {
-        return slotType switch
-        {
-            EquipmentSlotType.Core => new Color(1.0f, 0.4f, 0.4f),
-            EquipmentSlotType.Utility => new Color(0.4f, 0.8f, 1.0f),
-            EquipmentSlotType.Base => new Color(0.6f, 0.8f, 0.4f),
-            _ => new Color(0.7f, 0.7f, 0.7f)
-        };
+        return panelContainer;
     }
 
     public override void _ExitTree()

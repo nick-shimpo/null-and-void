@@ -7,7 +7,7 @@ using NullAndVoid.Core;
 namespace NullAndVoid.UI;
 
 /// <summary>
-/// Full-screen inventory management UI.
+/// Terminal-styled full-screen inventory management UI.
 /// Shows inventory items and equipment slots, allows equipping/unequipping.
 /// </summary>
 public partial class InventoryScreen : Control
@@ -16,8 +16,9 @@ public partial class InventoryScreen : Control
     private Equipment? _equipment;
 
     // UI References
+    private Panel? _mainPanel;
     private GridContainer? _inventoryGrid;
-    private VBoxContainer? _equipmentPanel;
+    private VBoxContainer? _equipmentSlots;
     private Label? _itemNameLabel;
     private Label? _itemDescLabel;
     private Label? _statsLabel;
@@ -31,28 +32,61 @@ public partial class InventoryScreen : Control
     private EquipmentSlotType _selectedSlotType;
     private int _selectedSlotIndex;
 
-    // Slot button references for highlighting
-    private readonly Dictionary<string, Button> _slotButtons = new();
-
     public override void _Ready()
     {
-        // Get UI references
-        _inventoryGrid = GetNode<GridContainer>("MainPanel/HSplit/InventoryPanel/ScrollContainer/InventoryGrid");
-        _equipmentPanel = GetNode<VBoxContainer>("MainPanel/HSplit/EquipmentPanel/EquipmentSlots");
-        _itemNameLabel = GetNode<Label>("MainPanel/HSplit/DetailsPanel/ItemName");
-        _itemDescLabel = GetNode<Label>("MainPanel/HSplit/DetailsPanel/ItemDesc");
-        _statsLabel = GetNode<Label>("MainPanel/HSplit/DetailsPanel/Stats");
-        _equipButton = GetNode<Button>("MainPanel/HSplit/DetailsPanel/EquipButton");
-        _unequipButton = GetNode<Button>("MainPanel/HSplit/DetailsPanel/UnequipButton");
-        _closeButton = GetNode<Button>("MainPanel/CloseButton");
+        // Get UI references with updated paths
+        _mainPanel = GetNode<Panel>("MainPanel");
+        _inventoryGrid = GetNode<GridContainer>("MainPanel/VBoxContainer/HSplit/InventoryPanel/VBox/ScrollContainer/InventoryGrid");
+        _equipmentSlots = GetNode<VBoxContainer>("MainPanel/VBoxContainer/HSplit/EquipmentPanel/VBox/EquipmentSlots");
+        _itemNameLabel = GetNode<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/ItemName");
+        _itemDescLabel = GetNode<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/DescScroll/ItemDesc");
+        _statsLabel = GetNode<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/Stats");
+        _equipButton = GetNode<Button>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/ButtonContainer/EquipButton");
+        _unequipButton = GetNode<Button>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/ButtonContainer/UnequipButton");
+        _closeButton = GetNode<Button>("MainPanel/VBoxContainer/TitleBar/CloseButton");
 
         // Connect signals
         _equipButton?.Connect("pressed", Callable.From(OnEquipPressed));
         _unequipButton?.Connect("pressed", Callable.From(OnUnequipPressed));
         _closeButton?.Connect("pressed", Callable.From(Close));
 
+        // Apply terminal styling
+        ApplyTerminalStyling();
+
         // Hide by default
         Visible = false;
+    }
+
+    private void ApplyTerminalStyling()
+    {
+        // Style main panel
+        if (_mainPanel != null)
+            TerminalTheme.StylePanel(_mainPanel);
+
+        // Style all sub-panels
+        var inventoryPanel = GetNodeOrNull<Panel>("MainPanel/VBoxContainer/HSplit/InventoryPanel");
+        var equipmentPanel = GetNodeOrNull<Panel>("MainPanel/VBoxContainer/HSplit/EquipmentPanel");
+        var detailsPanel = GetNodeOrNull<Panel>("MainPanel/VBoxContainer/HSplit/DetailsPanel");
+
+        if (inventoryPanel != null) TerminalTheme.StylePanel(inventoryPanel);
+        if (equipmentPanel != null) TerminalTheme.StylePanel(equipmentPanel);
+        if (detailsPanel != null) TerminalTheme.StylePanel(detailsPanel);
+
+        // Style headers
+        var titleLabel = GetNodeOrNull<Label>("MainPanel/VBoxContainer/TitleBar/Title");
+        var invHeader = GetNodeOrNull<Label>("MainPanel/VBoxContainer/HSplit/InventoryPanel/VBox/Header");
+        var equipHeader = GetNodeOrNull<Label>("MainPanel/VBoxContainer/HSplit/EquipmentPanel/VBox/Header");
+        var detailsHeader = GetNodeOrNull<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/Header");
+
+        if (titleLabel != null) TerminalTheme.StyleLabel(titleLabel, TerminalTheme.PrimaryBright, 18);
+        if (invHeader != null) TerminalTheme.StyleLabel(invHeader, TerminalTheme.Primary, 14);
+        if (equipHeader != null) TerminalTheme.StyleLabel(equipHeader, TerminalTheme.Primary, 14);
+        if (detailsHeader != null) TerminalTheme.StyleLabel(detailsHeader, TerminalTheme.Primary, 14);
+
+        // Style buttons
+        if (_closeButton != null) TerminalTheme.StyleButton(_closeButton);
+        if (_equipButton != null) TerminalTheme.StyleButton(_equipButton);
+        if (_unequipButton != null) TerminalTheme.StyleButton(_unequipButton);
     }
 
     /// <summary>
@@ -69,9 +103,6 @@ public partial class InventoryScreen : Control
             _equipment.EquipmentChanged += RefreshDisplay;
     }
 
-    /// <summary>
-    /// Open the inventory screen.
-    /// </summary>
     public void Open()
     {
         Visible = true;
@@ -81,18 +112,12 @@ public partial class InventoryScreen : Control
         GameState.Instance.TransitionTo(GameState.State.Inventory);
     }
 
-    /// <summary>
-    /// Close the inventory screen.
-    /// </summary>
     public void Close()
     {
         Visible = false;
         GameState.Instance.TransitionTo(GameState.State.Playing);
     }
 
-    /// <summary>
-    /// Toggle inventory visibility.
-    /// </summary>
     public void Toggle()
     {
         if (Visible)
@@ -136,25 +161,24 @@ public partial class InventoryScreen : Control
 
     private void RefreshEquipmentSlots()
     {
-        if (_equipmentPanel == null || _equipment == null)
+        if (_equipmentSlots == null || _equipment == null)
             return;
 
         // Clear existing
-        foreach (var child in _equipmentPanel.GetChildren())
+        foreach (var child in _equipmentSlots.GetChildren())
         {
             child.QueueFree();
         }
-        _slotButtons.Clear();
 
         // Create equipment slot sections
-        CreateEquipmentSection("CORE SLOTS", EquipmentSlotType.Core, 2);
-        CreateEquipmentSection("UTILITY SLOTS", EquipmentSlotType.Utility, 2);
-        CreateEquipmentSection("BASE SLOTS", EquipmentSlotType.Base, 2);
+        CreateEquipmentSection(">> CORE MODULES <<", EquipmentSlotType.Core, 2);
+        CreateEquipmentSection(">> UTILITY MODULES <<", EquipmentSlotType.Utility, 2);
+        CreateEquipmentSection(">> BASE MODULES <<", EquipmentSlotType.Base, 2);
     }
 
     private void CreateEquipmentSection(string title, EquipmentSlotType slotType, int slotCount)
     {
-        if (_equipmentPanel == null || _equipment == null)
+        if (_equipmentSlots == null || _equipment == null)
             return;
 
         // Section header
@@ -163,56 +187,57 @@ public partial class InventoryScreen : Control
             Text = title,
             HorizontalAlignment = HorizontalAlignment.Center
         };
-        header.AddThemeFontSizeOverride("font_size", 12);
-        header.AddThemeColorOverride("font_color", GetSlotTypeColor(slotType));
-        _equipmentPanel.AddChild(header);
+        TerminalTheme.StyleLabel(header, TerminalTheme.GetSlotColor(slotType), 12);
+        _equipmentSlots.AddChild(header);
 
-        // Slots
+        // Slots in horizontal container
         var hbox = new HBoxContainer();
         hbox.AddThemeConstantOverride("separation", 10);
-        _equipmentPanel.AddChild(hbox);
+        hbox.Alignment = BoxContainer.AlignmentMode.Center;
+        _equipmentSlots.AddChild(hbox);
 
         for (int i = 0; i < slotCount; i++)
         {
             var item = _equipment.GetItemInSlot(slotType, i);
             var button = CreateItemButton(item, true, slotType, i);
-            button.CustomMinimumSize = new Vector2(150, 60);
+            button.CustomMinimumSize = new Vector2(140, 55);
             hbox.AddChild(button);
-
-            string key = $"{slotType}_{i}";
-            _slotButtons[key] = button;
         }
 
         // Spacer
-        var spacer = new Control { CustomMinimumSize = new Vector2(0, 10) };
-        _equipmentPanel.AddChild(spacer);
+        var spacer = new Control { CustomMinimumSize = new Vector2(0, 8) };
+        _equipmentSlots.AddChild(spacer);
     }
 
     private Button CreateItemButton(Item? item, bool isEquipment, EquipmentSlotType slotType, int slotIndex)
     {
         var button = new Button
         {
-            CustomMinimumSize = new Vector2(80, 60),
+            CustomMinimumSize = new Vector2(75, 55),
             ClipText = true
         };
+
+        // Apply terminal button styling
+        TerminalTheme.StyleButton(button);
 
         if (item != null)
         {
             button.Text = item.Name;
-            button.Modulate = item.DisplayColor;
+            button.AddThemeColorOverride("font_color", TerminalTheme.GetRarityColor(item.Rarity));
+            button.AddThemeColorOverride("font_hover_color", TerminalTheme.PrimaryBright);
             button.Connect("pressed", Callable.From(() => SelectItem(item, isEquipment, slotType, slotIndex)));
         }
         else if (isEquipment)
         {
-            button.Text = "[Empty]";
-            button.Modulate = new Color(0.5f, 0.5f, 0.5f);
+            button.Text = TerminalTheme.FormatEmpty();
+            button.AddThemeColorOverride("font_color", TerminalTheme.TextMuted);
             button.Connect("pressed", Callable.From(() => SelectEmptySlot(slotType, slotIndex)));
         }
         else
         {
             button.Text = "";
             button.Disabled = true;
-            button.Modulate = new Color(0.3f, 0.3f, 0.3f);
+            button.AddThemeColorOverride("font_color", TerminalTheme.TextDisabled);
         }
 
         return button;
@@ -220,13 +245,15 @@ public partial class InventoryScreen : Control
 
     private Button CreateEmptySlotButton()
     {
-        return new Button
+        var button = new Button
         {
-            CustomMinimumSize = new Vector2(80, 60),
+            CustomMinimumSize = new Vector2(75, 55),
             Text = "",
-            Disabled = true,
-            Modulate = new Color(0.3f, 0.3f, 0.3f)
+            Disabled = true
         };
+        TerminalTheme.StyleButton(button);
+        button.AddThemeColorOverride("font_color", TerminalTheme.TextDisabled);
+        return button;
     }
 
     private void SelectItem(Item item, bool fromEquipment, EquipmentSlotType slotType, int slotIndex)
@@ -263,9 +290,20 @@ public partial class InventoryScreen : Control
         if (_selectedItem != null)
         {
             _itemNameLabel.Text = _selectedItem.Name;
-            _itemNameLabel.AddThemeColorOverride("font_color", _selectedItem.DisplayColor);
+            TerminalTheme.StyleLabel(_itemNameLabel, TerminalTheme.GetRarityColor(_selectedItem.Rarity), 16);
+
             _itemDescLabel.Text = _selectedItem.Description;
-            _statsLabel.Text = $"Slot Type: {_selectedItem.SlotType}\nRarity: {_selectedItem.Rarity}";
+            TerminalTheme.StyleLabel(_itemDescLabel, TerminalTheme.TextSecondary, 12);
+
+            // Format stats with terminal style
+            var statsText = TerminalTheme.FormatStats(
+                _selectedItem.BonusDamage,
+                _selectedItem.BonusArmor,
+                _selectedItem.BonusHealth,
+                _selectedItem.BonusSightRange
+            );
+            _statsLabel.Text = $"Slot: [{_selectedItem.SlotType}]  Rarity: [{_selectedItem.Rarity}]\n{statsText}";
+            TerminalTheme.StyleLabel(_statsLabel, TerminalTheme.Primary, 11);
 
             // Show appropriate button
             _equipButton.Visible = !_selectedFromEquipment;
@@ -274,8 +312,11 @@ public partial class InventoryScreen : Control
         else
         {
             _itemNameLabel.Text = "No Item Selected";
-            _itemNameLabel.AddThemeColorOverride("font_color", new Color(0.6f, 0.6f, 0.6f));
-            _itemDescLabel.Text = "Select an item from your inventory or equipment slots.";
+            TerminalTheme.StyleLabel(_itemNameLabel, TerminalTheme.TextMuted, 16);
+
+            _itemDescLabel.Text = "Select an item from your inventory or equipment slots to view its details.";
+            TerminalTheme.StyleLabel(_itemDescLabel, TerminalTheme.TextMuted, 12);
+
             _statsLabel.Text = "";
             _equipButton.Visible = false;
             _unequipButton.Visible = false;
@@ -319,7 +360,7 @@ public partial class InventoryScreen : Control
 
         if (_inventory.IsFull)
         {
-            GD.Print("Inventory is full - cannot unequip!");
+            GD.Print("> ERROR: Inventory full - cannot unequip!");
             return;
         }
 
@@ -331,17 +372,6 @@ public partial class InventoryScreen : Control
 
         ClearSelection();
         RefreshDisplay();
-    }
-
-    private Color GetSlotTypeColor(EquipmentSlotType slotType)
-    {
-        return slotType switch
-        {
-            EquipmentSlotType.Core => new Color(1.0f, 0.4f, 0.4f),
-            EquipmentSlotType.Utility => new Color(0.4f, 0.8f, 1.0f),
-            EquipmentSlotType.Base => new Color(0.6f, 0.8f, 0.4f),
-            _ => new Color(0.7f, 0.7f, 0.7f)
-        };
     }
 
     public override void _ExitTree()

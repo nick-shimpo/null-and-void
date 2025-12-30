@@ -18,6 +18,7 @@ public partial class Game : Node2D
     private Label? _turnLabel;
     private Label? _healthLabel;
     private Label? _positionLabel;
+    private Panel? _topBar;
     private Player? _player;
     private TileMapManager? _tileMapManager;
     private Node2D? _entitiesNode;
@@ -27,6 +28,7 @@ public partial class Game : Node2D
     public override void _Ready()
     {
         // Get references
+        _topBar = GetNode<Panel>("UI/HUD/TopBar");
         _turnLabel = GetNode<Label>("UI/HUD/TopBar/TurnLabel");
         _healthLabel = GetNode<Label>("UI/HUD/TopBar/HealthLabel");
         _positionLabel = GetNodeOrNull<Label>("UI/HUD/TopBar/PositionLabel");
@@ -35,6 +37,9 @@ public partial class Game : Node2D
         _entitiesNode = GetNode<Node2D>("Entities");
         _equipmentBar = GetNode<EquipmentBar>("UI/HUD/EquipmentBar");
         _inventoryScreen = GetNode<InventoryScreen>("UI/InventoryScreen");
+
+        // Apply terminal styling to HUD
+        ApplyTerminalStyling();
 
         // Subscribe to events
         EventBus.Instance.TurnStarted += OnTurnStarted;
@@ -58,6 +63,21 @@ public partial class Game : Node2D
         TurnManager.Instance.StartNewGame();
 
         UpdateUI();
+    }
+
+    private void ApplyTerminalStyling()
+    {
+        // Style TopBar
+        if (_topBar != null)
+            TerminalTheme.StylePanel(_topBar);
+
+        // Style labels
+        if (_healthLabel != null)
+            TerminalTheme.StyleLabel(_healthLabel, TerminalTheme.Primary, 14);
+        if (_turnLabel != null)
+            TerminalTheme.StyleLabel(_turnLabel, TerminalTheme.Primary, 14);
+        if (_positionLabel != null)
+            TerminalTheme.StyleLabel(_positionLabel, TerminalTheme.PrimaryDim, 14);
     }
 
     private void SetupInventorySystem()
@@ -250,17 +270,24 @@ public partial class Game : Node2D
     {
         if (_turnLabel != null)
         {
-            _turnLabel.Text = $"Turn: {TurnManager.Instance.CurrentTurn}";
+            _turnLabel.Text = TerminalTheme.FormatStatus("TURN", TurnManager.Instance.CurrentTurn.ToString());
         }
 
         if (_healthLabel != null && _player != null)
         {
-            _healthLabel.Text = $"HP: {_player.CurrentHealth}/{_player.MaxHealth}";
+            _healthLabel.Text = TerminalTheme.FormatStatus("HP", $"{_player.CurrentHealth}/{_player.MaxHealth}");
+
+            // Color based on health percentage
+            float healthPercent = (float)_player.CurrentHealth / _player.MaxHealth;
+            Color healthColor = healthPercent > 0.5f ? TerminalTheme.Primary :
+                               healthPercent > 0.25f ? TerminalTheme.AlertWarning :
+                               TerminalTheme.AlertDanger;
+            _healthLabel.AddThemeColorOverride("font_color", healthColor);
         }
 
         if (_positionLabel != null && _player != null)
         {
-            _positionLabel.Text = $"Pos: {_player.GridPosition}";
+            _positionLabel.Text = TerminalTheme.FormatStatus("POS", $"{_player.GridPosition.X},{_player.GridPosition.Y}");
         }
     }
 }
