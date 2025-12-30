@@ -2,6 +2,7 @@ using Godot;
 using System;
 using NullAndVoid.Core;
 using NullAndVoid.World;
+using NullAndVoid.Systems;
 
 namespace NullAndVoid.Entities;
 
@@ -12,6 +13,8 @@ public partial class Player : Entity
 {
     [Export] public int MaxHealth { get; set; } = 100;
     [Export] public int CurrentHealth { get; set; } = 100;
+    [Export] public int AttackDamage { get; set; } = 10;
+    [Export] public int SightRange { get; set; } = 10;
 
     private bool _canAct = true;
 
@@ -19,6 +22,9 @@ public partial class Player : Entity
     {
         base._Ready();
         EntityName = "Null";
+
+        // Add to player group for enemy targeting
+        AddToGroup("Player");
 
         // Subscribe to turn events
         EventBus.Instance.PlayerTurnStarted += OnPlayerTurnStarted;
@@ -87,8 +93,17 @@ public partial class Player : Entity
             return;
         }
 
-        // TODO: Add collision detection with other entities
+        // Check for enemy at target position - attack instead of move
+        var enemy = CombatSystem.GetEnemyAtPosition(GetTree(), newPosition);
+        if (enemy != null)
+        {
+            // Attack the enemy
+            CombatSystem.PerformMeleeAttack(this, enemy, AttackDamage);
+            EndTurn();
+            return;
+        }
 
+        // Move to empty space
         if (Move(direction))
         {
             EndTurn();
