@@ -63,12 +63,23 @@ null-and-void/
 
 ## Controls
 
+### Movement (8 directions)
+```
+ Q W E          7 8 9
+ A . D    or    4 5 6    (Numpad)
+ Z S C          1 2 3
+```
+
 | Key | Action |
 |-----|--------|
 | W / Up Arrow / Numpad 8 | Move up |
 | S / Down Arrow / Numpad 2 | Move down |
 | A / Left Arrow / Numpad 4 | Move left |
 | D / Right Arrow / Numpad 6 | Move right |
+| Q / Numpad 7 | Move up-left (diagonal) |
+| E / Numpad 9 | Move up-right (diagonal) |
+| Z / Numpad 1 | Move down-left (diagonal) |
+| C / Numpad 3 | Move down-right (diagonal) |
 | . / Numpad 5 | Wait (skip turn) |
 | Escape | Pause / Menu |
 

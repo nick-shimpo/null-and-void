@@ -44,6 +44,7 @@ public partial class Player : Entity
 
         Vector2I moveDirection = Vector2I.Zero;
 
+        // Cardinal directions
         if (@event.IsActionPressed("move_up"))
             moveDirection = new Vector2I(0, -1);
         else if (@event.IsActionPressed("move_down"))
@@ -52,6 +53,16 @@ public partial class Player : Entity
             moveDirection = new Vector2I(-1, 0);
         else if (@event.IsActionPressed("move_right"))
             moveDirection = new Vector2I(1, 0);
+        // Diagonal directions
+        else if (@event.IsActionPressed("move_up_left"))
+            moveDirection = new Vector2I(-1, -1);
+        else if (@event.IsActionPressed("move_up_right"))
+            moveDirection = new Vector2I(1, -1);
+        else if (@event.IsActionPressed("move_down_left"))
+            moveDirection = new Vector2I(-1, 1);
+        else if (@event.IsActionPressed("move_down_right"))
+            moveDirection = new Vector2I(1, 1);
+        // Wait
         else if (@event.IsActionPressed("wait_turn"))
         {
             // Wait in place (skip turn)
