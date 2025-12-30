@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using NullAndVoid.Core;
+using NullAndVoid.World;
 
 namespace NullAndVoid.Entities;
 
@@ -68,7 +69,15 @@ public partial class Player : Entity
     {
         var newPosition = GridPosition + direction;
 
-        // TODO: Add collision detection with walls and other entities
+        // Check collision with walls
+        if (!TileMapManager.Instance.IsWalkable(newPosition))
+        {
+            // Can't move - wall or out of bounds
+            return;
+        }
+
+        // TODO: Add collision detection with other entities
+
         if (Move(direction))
         {
             EndTurn();

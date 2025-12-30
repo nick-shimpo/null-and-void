@@ -1,19 +1,33 @@
-[gd_scene load_steps=3 format=3 uid="uid://game_scene"]
+[gd_scene load_steps=4 format=3 uid="uid://game_scene"]
 
 [ext_resource type="Script" path="res://src/Core/Game.cs" id="1_game"]
 [ext_resource type="Script" path="res://src/Entities/Player.cs" id="2_player"]
+[ext_resource type="Script" path="res://src/World/TileMapManager.cs" id="3_tilemap"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
 
-[node name="TileMap" type="TileMapLayer" parent="."]
+[node name="TileMapManager" type="Node2D" parent="."]
+script = ExtResource("3_tilemap")
 
 [node name="Entities" type="Node2D" parent="."]
 
 [node name="Player" type="Node2D" parent="Entities"]
 script = ExtResource("2_player")
 
-[node name="Sprite" type="Sprite2D" parent="Entities/Player"]
+[node name="Sprite" type="ColorRect" parent="Entities/Player"]
+offset_left = -12.0
+offset_top = -14.0
+offset_right = 12.0
+offset_bottom = 14.0
+color = Color(0, 0.85, 1, 1)
+
+[node name="Eye" type="ColorRect" parent="Entities/Player"]
+offset_left = -4.0
+offset_top = -8.0
+offset_right = 4.0
+offset_bottom = 0.0
+color = Color(1, 0, 0.33, 1)
 
 [node name="Camera2D" type="Camera2D" parent="Entities/Player"]
 zoom = Vector2(2, 2)
@@ -28,19 +42,44 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TurnLabel" type="Label" parent="UI/HUD"]
+[node name="TopBar" type="Panel" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 40.0
+grow_horizontal = 2
+
+[node name="HealthLabel" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 150.0
+offset_bottom = 30.0
+text = "HP: 100/100"
+
+[node name="TurnLabel" type="Label" parent="UI/HUD/TopBar"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -100.0
+offset_left = -140.0
+offset_top = 10.0
+offset_right = -10.0
 offset_bottom = 30.0
 grow_horizontal = 0
+horizontal_alignment = 2
 text = "Turn: 0"
 
-[node name="HealthLabel" type="Label" parent="UI/HUD"]
+[node name="PositionLabel" type="Label" parent="UI/HUD/TopBar"]
 layout_mode = 1
-anchors_preset = 0
-offset_right = 100.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -60.0
+offset_top = 10.0
+offset_right = 60.0
 offset_bottom = 30.0
-text = "HP: 100/100"
+grow_horizontal = 2
+horizontal_alignment = 1
+text = "Pos: (0, 0)"

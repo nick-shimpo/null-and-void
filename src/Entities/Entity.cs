@@ -43,7 +43,7 @@ public partial class Entity : Node2D
     /// <summary>
     /// Updates the visual (pixel) position based on the grid position.
     /// </summary>
-    protected void UpdateVisualPosition()
+    public void UpdateVisualPosition()
     {
         Position = new Vector2(
             GridPosition.X * TileSize + TileSize / 2,

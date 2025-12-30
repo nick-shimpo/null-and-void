@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Body -->
+  <rect x="8" y="8" width="16" height="20" rx="2" fill="#00d9ff"/>
+  <!-- Core/Eye -->
+  <circle cx="16" cy="14" r="4" fill="#1a1a2e"/>
+  <circle cx="16" cy="14" r="2" fill="#ff0055"/>
+  <!-- Antenna -->
+  <line x1="16" y1="8" x2="16" y2="4" stroke="#00d9ff" stroke-width="2"/>
+  <circle cx="16" cy="3" r="2" fill="#ff0055"/>
+  <!-- Arms/Mounts -->
+  <rect x="4" y="12" width="4" height="8" rx="1" fill="#00a0cc"/>
+  <rect x="24" y="12" width="4" height="8" rx="1" fill="#00a0cc"/>
+</svg>
