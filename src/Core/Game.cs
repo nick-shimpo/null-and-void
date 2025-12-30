@@ -1,6 +1,8 @@
 using Godot;
 using NullAndVoid.Entities;
 using NullAndVoid.World;
+using NullAndVoid.UI;
+using NullAndVoid.Items;
 
 namespace NullAndVoid.Core;
 
@@ -19,9 +21,8 @@ public partial class Game : Node2D
     private Player? _player;
     private TileMapManager? _tileMapManager;
     private Node2D? _entitiesNode;
-
-    // Preloaded enemy scene (created programmatically)
-    private PackedScene? _enemyScene;
+    private EquipmentBar? _equipmentBar;
+    private InventoryScreen? _inventoryScreen;
 
     public override void _Ready()
     {
@@ -32,6 +33,8 @@ public partial class Game : Node2D
         _player = GetNode<Player>("Entities/Player");
         _tileMapManager = GetNode<TileMapManager>("TileMapManager");
         _entitiesNode = GetNode<Node2D>("Entities");
+        _equipmentBar = GetNode<EquipmentBar>("UI/HUD/EquipmentBar");
+        _inventoryScreen = GetNode<InventoryScreen>("UI/InventoryScreen");
 
         // Subscribe to events
         EventBus.Instance.TurnStarted += OnTurnStarted;
@@ -44,6 +47,9 @@ public partial class Game : Node2D
         // Spawn enemies
         SpawnEnemies();
 
+        // Setup inventory and equipment UI
+        SetupInventorySystem();
+
         // Initial FOV calculation
         UpdateFOV();
 
@@ -52,6 +58,59 @@ public partial class Game : Node2D
         TurnManager.Instance.StartNewGame();
 
         UpdateUI();
+    }
+
+    private void SetupInventorySystem()
+    {
+        if (_player == null || _equipmentBar == null || _inventoryScreen == null)
+            return;
+
+        // Connect equipment bar to player's equipment
+        if (_player.EquipmentComponent != null)
+        {
+            _equipmentBar.SetEquipment(_player.EquipmentComponent);
+        }
+
+        // Setup inventory screen
+        if (_player.InventoryComponent != null && _player.EquipmentComponent != null)
+        {
+            _inventoryScreen.Setup(_player.InventoryComponent, _player.EquipmentComponent);
+        }
+
+        // Give player some starter items
+        GiveStarterItems();
+    }
+
+    private void GiveStarterItems()
+    {
+        if (_player?.InventoryComponent == null || _player.EquipmentComponent == null)
+            return;
+
+        // Give 2 starter items and equip them
+        var blaster = ItemFactory.CreateStarterWeapon();
+        var plating = ItemFactory.CreateStarterArmor();
+
+        // Equip starter items
+        _player.EquipmentComponent.Equip(blaster, EquipmentSlotType.Core, 0);
+        _player.EquipmentComponent.Equip(plating, EquipmentSlotType.Base, 0);
+
+        // Add a few random items to inventory for testing
+        for (int i = 0; i < 3; i++)
+        {
+            var randomItem = ItemFactory.CreateRandomItem();
+            _player.InventoryComponent.AddItem(randomItem);
+        }
+
+        GD.Print("Starter items equipped and inventory populated");
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        // Toggle inventory on I or Tab
+        if (@event.IsActionPressed("open_inventory"))
+        {
+            _inventoryScreen?.Toggle();
+        }
     }
 
     private void GenerateMap()

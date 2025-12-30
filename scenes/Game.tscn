@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://game_scene"]
+[gd_scene load_steps=8 format=3 uid="uid://game_scene"]
 
 [ext_resource type="Script" path="res://src/Core/Game.cs" id="1_game"]
 [ext_resource type="Script" path="res://src/Entities/Player.cs" id="2_player"]
 [ext_resource type="Script" path="res://src/World/TileMapManager.cs" id="3_tilemap"]
 [ext_resource type="Script" path="res://src/UI/MessageLog.cs" id="4_msglog"]
+[ext_resource type="Script" path="res://src/UI/EquipmentBar.cs" id="5_equipbar"]
+[ext_resource type="PackedScene" uid="uid://inventory_screen" path="res://scenes/InventoryScreen.tscn" id="6_invscreen"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
@@ -115,3 +117,38 @@ offset_right = -10.0
 offset_bottom = -5.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="EquipmentBar" type="Control" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -180.0
+offset_bottom = -120.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("5_equipbar")
+
+[node name="Panel" type="Panel" parent="UI/HUD/EquipmentBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SlotsContainer" type="HBoxContainer" parent="UI/HUD/EquipmentBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 5.0
+offset_right = -10.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="InventoryScreen" parent="UI" instance=ExtResource("6_invscreen")]
