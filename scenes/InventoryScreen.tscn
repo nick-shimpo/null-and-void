@@ -145,26 +145,33 @@ horizontal_alignment = 1
 
 [node name="ItemName" type="Label" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 25)
 text = "No Item Selected"
 horizontal_alignment = 1
+text_overrun_behavior = 3
+clip_text = true
 
 [node name="HSeparator" type="HSeparator" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
 layout_mode = 2
 
 [node name="DescScroll" type="ScrollContainer" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
-custom_minimum_size = Vector2(0, 100)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
 [node name="ItemDesc" type="Label" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/DescScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Select an item to view details."
-autowrap_mode = 2
+autowrap_mode = 3
+custom_minimum_size = Vector2(250, 0)
 
 [node name="Stats" type="Label" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Spacer" type="Control" parent="MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox"]
 custom_minimum_size = Vector2(0, 10)
