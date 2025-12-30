@@ -18,7 +18,8 @@ public partial class InventoryScreen : Control
     // UI References
     private Panel? _mainPanel;
     private GridContainer? _inventoryGrid;
-    private VBoxContainer? _equipmentSlots;
+    private VBoxContainer? _equipmentContainer;
+    private AISchematic? _aiSchematic;
     private Label? _itemNameLabel;
     private Label? _itemDescLabel;
     private Label? _statsLabel;
@@ -37,13 +38,16 @@ public partial class InventoryScreen : Control
         // Get UI references with updated paths
         _mainPanel = GetNode<Panel>("MainPanel");
         _inventoryGrid = GetNode<GridContainer>("MainPanel/VBoxContainer/HSplit/InventoryPanel/VBox/ScrollContainer/InventoryGrid");
-        _equipmentSlots = GetNode<VBoxContainer>("MainPanel/VBoxContainer/HSplit/EquipmentPanel/VBox/EquipmentSlots");
+        _equipmentContainer = GetNode<VBoxContainer>("MainPanel/VBoxContainer/HSplit/EquipmentPanel/VBox/EquipmentSlots");
         _itemNameLabel = GetNode<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/ItemName");
         _itemDescLabel = GetNode<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/DescScroll/ItemDesc");
         _statsLabel = GetNode<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/Stats");
         _equipButton = GetNode<Button>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/ButtonContainer/EquipButton");
         _unequipButton = GetNode<Button>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/ButtonContainer/UnequipButton");
         _closeButton = GetNode<Button>("MainPanel/VBoxContainer/TitleBar/CloseButton");
+
+        // Create and add AI Schematic
+        CreateAISchematic();
 
         // Connect signals
         _equipButton?.Connect("pressed", Callable.From(OnEquipPressed));
@@ -55,6 +59,35 @@ public partial class InventoryScreen : Control
 
         // Hide by default
         Visible = false;
+    }
+
+    private void CreateAISchematic()
+    {
+        if (_equipmentContainer == null) return;
+
+        // Clear the placeholder EquipmentSlots container
+        foreach (var child in _equipmentContainer.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        // Create and add the AI Schematic
+        _aiSchematic = new AISchematic();
+        _aiSchematic.SizeFlagsVertical = SizeFlags.ExpandFill;
+        _aiSchematic.SlotSelected += OnSchematicSlotSelected;
+        _equipmentContainer.AddChild(_aiSchematic);
+    }
+
+    private void OnSchematicSlotSelected(Item? item, bool fromEquipment, EquipmentSlotType slotType, int slotIndex)
+    {
+        if (item != null)
+        {
+            SelectItem(item, fromEquipment, slotType, slotIndex);
+        }
+        else
+        {
+            SelectEmptySlot(slotType, slotIndex);
+        }
     }
 
     private void ApplyTerminalStyling()
@@ -101,6 +134,10 @@ public partial class InventoryScreen : Control
             _inventory.InventoryChanged += RefreshDisplay;
         if (_equipment != null)
             _equipment.EquipmentChanged += RefreshDisplay;
+
+        // Connect equipment to AI Schematic
+        if (_aiSchematic != null && _equipment != null)
+            _aiSchematic.SetEquipment(_equipment);
     }
 
     public void Open()
@@ -179,52 +216,8 @@ public partial class InventoryScreen : Control
 
     private void RefreshEquipmentSlots()
     {
-        if (_equipmentSlots == null || _equipment == null)
-            return;
-
-        // Clear existing
-        foreach (var child in _equipmentSlots.GetChildren())
-        {
-            child.QueueFree();
-        }
-
-        // Create equipment slot sections
-        CreateEquipmentSection(">> CORE MODULES <<", EquipmentSlotType.Core, 2);
-        CreateEquipmentSection(">> UTILITY MODULES <<", EquipmentSlotType.Utility, 2);
-        CreateEquipmentSection(">> BASE MODULES <<", EquipmentSlotType.Base, 2);
-    }
-
-    private void CreateEquipmentSection(string title, EquipmentSlotType slotType, int slotCount)
-    {
-        if (_equipmentSlots == null || _equipment == null)
-            return;
-
-        // Section header with glow
-        var header = new Label
-        {
-            Text = title,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        TerminalTheme.StyleLabelGlow(header, TerminalTheme.GetSlotColor(slotType), 12);
-        _equipmentSlots.AddChild(header);
-
-        // Slots in horizontal container
-        var hbox = new HBoxContainer();
-        hbox.AddThemeConstantOverride("separation", 10);
-        hbox.Alignment = BoxContainer.AlignmentMode.Center;
-        _equipmentSlots.AddChild(hbox);
-
-        for (int i = 0; i < slotCount; i++)
-        {
-            var item = _equipment.GetItemInSlot(slotType, i);
-            var button = CreateItemButton(item, true, slotType, i);
-            button.CustomMinimumSize = new Vector2(140, 55);
-            hbox.AddChild(button);
-        }
-
-        // Spacer
-        var spacer = new Control { CustomMinimumSize = new Vector2(0, 8) };
-        _equipmentSlots.AddChild(spacer);
+        // AISchematic handles its own updates via Equipment.EquipmentChanged event
+        // No additional refresh needed here
     }
 
     private Button CreateItemButton(Item? item, bool isEquipment, EquipmentSlotType slotType, int slotIndex)
@@ -398,5 +391,7 @@ public partial class InventoryScreen : Control
             _inventory.InventoryChanged -= RefreshDisplay;
         if (_equipment != null)
             _equipment.EquipmentChanged -= RefreshDisplay;
+        if (_aiSchematic != null)
+            _aiSchematic.SlotSelected -= OnSchematicSlotSelected;
     }
 }
