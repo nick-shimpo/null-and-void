@@ -1,0 +1,19 @@
+[gd_scene load_steps=5 format=3 uid="uid://main_scene"]
+
+[ext_resource type="Script" path="res://src/Core/EventBus.cs" id="1_eventbus"]
+[ext_resource type="Script" path="res://src/Core/TurnManager.cs" id="2_turnmanager"]
+[ext_resource type="Script" path="res://src/Core/GameState.cs" id="3_gamestate"]
+[ext_resource type="PackedScene" uid="uid://game_scene" path="res://scenes/Game.tscn" id="4_game"]
+
+[node name="Main" type="Node"]
+
+[node name="EventBus" type="Node" parent="."]
+script = ExtResource("1_eventbus")
+
+[node name="TurnManager" type="Node" parent="."]
+script = ExtResource("2_turnmanager")
+
+[node name="GameState" type="Node" parent="."]
+script = ExtResource("3_gamestate")
+
+[node name="Game" parent="." instance=ExtResource("4_game")]
