@@ -6,4 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>NullAndVoid</RootNamespace>
   </PropertyGroup>
+
+  <!-- Exclude test project from main project compilation -->
+  <ItemGroup>
+    <Compile Remove="NullAndVoid.Tests\**" />
+    <None Remove="NullAndVoid.Tests\**" />
+  </ItemGroup>
 </Project>

@@ -1,0 +1,54 @@
+#!/bin/bash
+# Pre-commit hook for Null and Void
+# Runs formatting check, build, and tests
+
+set -e
+
+echo "=== Pre-commit checks ==="
+
+# Navigate to repo root
+cd "$(git rev-parse --show-toplevel)"
+
+# 1. Format check
+echo ""
+echo "[1/3] Checking code formatting..."
+# Note: IDE1006 naming warnings are not auto-fixable, so we filter them out
+FORMAT_OUTPUT=$(dotnet format NullAndVoid.sln --verify-no-changes 2>&1)
+FORMAT_EXIT=$?
+if [ $FORMAT_EXIT -ne 0 ]; then
+    # Check if the only issues are IDE1006 warnings (naming conventions)
+    NON_NAMING_ISSUES=$(echo "$FORMAT_OUTPUT" | grep -v "IDE1006" | grep -E "warning|error" | head -5)
+    if [ -n "$NON_NAMING_ISSUES" ]; then
+        echo ""
+        echo "ERROR: Code formatting issues found!"
+        echo "$NON_NAMING_ISSUES"
+        echo "Run 'dotnet format NullAndVoid.sln' to fix formatting, then re-commit."
+        exit 1
+    fi
+fi
+echo "✓ Formatting check passed"
+
+# 2. Build
+echo ""
+echo "[2/3] Building solution..."
+if ! dotnet build --no-restore -c Release > /dev/null 2>&1; then
+    echo ""
+    echo "ERROR: Build failed!"
+    dotnet build --no-restore -c Release
+    exit 1
+fi
+echo "✓ Build succeeded"
+
+# 3. Run tests
+echo ""
+echo "[3/3] Running tests..."
+if ! dotnet test --no-build -c Release --verbosity quiet 2>/dev/null; then
+    echo ""
+    echo "ERROR: Tests failed!"
+    dotnet test --no-build -c Release --verbosity minimal
+    exit 1
+fi
+echo "✓ All tests passed"
+
+echo ""
+echo "=== All pre-commit checks passed ==="

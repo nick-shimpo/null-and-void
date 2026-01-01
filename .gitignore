@@ -60,5 +60,6 @@ logs/
 *.temp
 *~
 
-# Test results
+# Test results and coverage
 TestResults/
+CoverageReport/

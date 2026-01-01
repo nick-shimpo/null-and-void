@@ -1,0 +1,67 @@
+#!/bin/bash
+# Pre-push hook for Null and Void
+# Runs full test suite with coverage check
+
+set -e
+
+echo "=== Pre-push checks ==="
+
+# Navigate to repo root
+cd "$(git rev-parse --show-toplevel)"
+
+# Coverage threshold
+THRESHOLD=70
+
+# 1. Run tests with coverage
+echo ""
+echo "[1/2] Running tests with coverage..."
+
+# Create TestResults directory if it doesn't exist
+mkdir -p TestResults
+
+# Run tests with coverage collection
+dotnet test -c Release \
+    --collect:"XPlat Code Coverage" \
+    --results-directory ./TestResults \
+    --verbosity minimal \
+    -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+# 2. Check coverage threshold
+echo ""
+echo "[2/2] Checking coverage threshold (minimum ${THRESHOLD}%)..."
+
+# Find the coverage file
+COVERAGE_FILE=$(find TestResults -name "coverage.cobertura.xml" -type f | head -1)
+
+if [ -z "$COVERAGE_FILE" ]; then
+    echo "WARNING: No coverage file found. Skipping coverage check."
+    echo "=== Pre-push checks passed (coverage skipped) ==="
+    exit 0
+fi
+
+# Extract line coverage rate
+COVERAGE_RATE=$(grep -oP 'line-rate="\K[^"]+' "$COVERAGE_FILE" | head -1)
+
+if [ -z "$COVERAGE_RATE" ]; then
+    echo "WARNING: Could not parse coverage rate. Skipping coverage check."
+    echo "=== Pre-push checks passed (coverage skipped) ==="
+    exit 0
+fi
+
+# Convert to percentage
+COVERAGE_PCT=$(echo "scale=2; $COVERAGE_RATE * 100" | bc 2>/dev/null || echo "0")
+
+echo "Current coverage: ${COVERAGE_PCT}%"
+
+# Check against threshold
+if [ "$(echo "$COVERAGE_PCT < $THRESHOLD" | bc 2>/dev/null || echo "0")" = "1" ]; then
+    echo ""
+    echo "ERROR: Code coverage (${COVERAGE_PCT}%) is below threshold (${THRESHOLD}%)"
+    echo "Add more tests to increase coverage before pushing."
+    exit 1
+fi
+
+echo "✓ Coverage check passed (${COVERAGE_PCT}% >= ${THRESHOLD}%)"
+
+echo ""
+echo "=== All pre-push checks passed ==="
