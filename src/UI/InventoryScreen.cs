@@ -1,8 +1,8 @@
-using Godot;
 using System.Collections.Generic;
+using Godot;
 using NullAndVoid.Components;
-using NullAndVoid.Items;
 using NullAndVoid.Core;
+using NullAndVoid.Items;
 
 namespace NullAndVoid.UI;
 
@@ -63,7 +63,8 @@ public partial class InventoryScreen : Control
 
     private void CreateAISchematic()
     {
-        if (_equipmentContainer == null) return;
+        if (_equipmentContainer == null)
+            return;
 
         // Clear the placeholder EquipmentSlots container
         foreach (var child in _equipmentContainer.GetChildren())
@@ -101,9 +102,12 @@ public partial class InventoryScreen : Control
         var equipmentPanel = GetNodeOrNull<Panel>("MainPanel/VBoxContainer/HSplit/EquipmentPanel");
         var detailsPanel = GetNodeOrNull<Panel>("MainPanel/VBoxContainer/HSplit/DetailsPanel");
 
-        if (inventoryPanel != null) TerminalTheme.StylePanel(inventoryPanel);
-        if (equipmentPanel != null) TerminalTheme.StylePanel(equipmentPanel);
-        if (detailsPanel != null) TerminalTheme.StylePanel(detailsPanel);
+        if (inventoryPanel != null)
+            TerminalTheme.StylePanel(inventoryPanel);
+        if (equipmentPanel != null)
+            TerminalTheme.StylePanel(equipmentPanel);
+        if (detailsPanel != null)
+            TerminalTheme.StylePanel(detailsPanel);
 
         // Style headers with glow
         var titleLabel = GetNodeOrNull<Label>("MainPanel/VBoxContainer/TitleBar/Title");
@@ -111,15 +115,22 @@ public partial class InventoryScreen : Control
         var equipHeader = GetNodeOrNull<Label>("MainPanel/VBoxContainer/HSplit/EquipmentPanel/VBox/Header");
         var detailsHeader = GetNodeOrNull<Label>("MainPanel/VBoxContainer/HSplit/DetailsPanel/VBox/Header");
 
-        if (titleLabel != null) TerminalTheme.StyleLabelGlow(titleLabel, TerminalTheme.PrimaryBright, 20);
-        if (invHeader != null) TerminalTheme.StyleLabelGlow(invHeader, TerminalTheme.Primary, 14);
-        if (equipHeader != null) TerminalTheme.StyleLabelGlow(equipHeader, TerminalTheme.Primary, 14);
-        if (detailsHeader != null) TerminalTheme.StyleLabelGlow(detailsHeader, TerminalTheme.Primary, 14);
+        if (titleLabel != null)
+            TerminalTheme.StyleLabelGlow(titleLabel, TerminalTheme.PrimaryBright, 20);
+        if (invHeader != null)
+            TerminalTheme.StyleLabelGlow(invHeader, TerminalTheme.Primary, 14);
+        if (equipHeader != null)
+            TerminalTheme.StyleLabelGlow(equipHeader, TerminalTheme.Primary, 14);
+        if (detailsHeader != null)
+            TerminalTheme.StyleLabelGlow(detailsHeader, TerminalTheme.Primary, 14);
 
         // Style buttons with glow
-        if (_closeButton != null) TerminalTheme.StyleButton(_closeButton);
-        if (_equipButton != null) TerminalTheme.StyleButton(_equipButton);
-        if (_unequipButton != null) TerminalTheme.StyleButton(_unequipButton);
+        if (_closeButton != null)
+            TerminalTheme.StyleButton(_closeButton);
+        if (_equipButton != null)
+            TerminalTheme.StyleButton(_equipButton);
+        if (_unequipButton != null)
+            TerminalTheme.StyleButton(_unequipButton);
     }
 
     /// <summary>

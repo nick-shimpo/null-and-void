@@ -1,24 +1,56 @@
-using Godot;
 using System.Threading.Tasks;
-using NullAndVoid.Core;
+using Godot;
+using NullAndVoid.AI;
+using NullAndVoid.AI.Behaviors;
 using NullAndVoid.Components;
+using NullAndVoid.Core;
 using NullAndVoid.World;
 
 namespace NullAndVoid.Entities;
 
 /// <summary>
 /// Base class for all enemy entities.
-/// Implements turn-based AI behavior.
+/// Implements IScheduledActor for energy-based turn scheduling.
+/// Also implements ITurnActor for backward compatibility.
 /// </summary>
-public partial class Enemy : Entity, ITurnActor
+public partial class Enemy : Entity, IScheduledActor, ITurnActor
 {
-    [Export] public int MaxHealth { get; set; } = 20;
-    [Export] public int AttackDamage { get; set; } = 5;
-    [Export] public int Speed { get; set; } = 1;
-    [Export] public int SightRange { get; set; } = 8;
+    // Legacy exports for editor configuration (used to initialize Attributes)
+    [Export] public int BaseMaxHealth { get; set; } = 20;
+    [Export] public int BaseAttackDamage { get; set; } = 5;
+    [Export] public int BaseSpeed { get; set; } = 100;
+    [Export] public int BaseSightRange { get; set; } = 8;
+    [Export] public int BaseEnergyOutput { get; set; } = 10;
+    [Export] public int BaseNoise { get; set; } = 50;
 
-    public bool IsActive { get; set; } = true;
+    // Components
+    public Attributes? AttributesComponent { get; private set; }
     public Health? HealthComponent { get; private set; }
+
+    // AI System
+    public BehaviorSelector Behaviors { get; private set; } = new();
+    public EnemyMemory Memory { get; private set; } = new();
+    private BehaviorContext? _behaviorContext;
+
+    /// <summary>
+    /// If true, skip default behavior initialization in _Ready().
+    /// Used when behaviors are configured by EnemyFactory.
+    /// </summary>
+    public bool SkipDefaultBehaviors { get; set; } = false;
+
+    // IScheduledActor implementation
+    public string ActorName => EntityName;
+    public int Speed => AttributesComponent?.Speed ?? BaseSpeed;
+    public bool IsActive => !_isDead && IsInstanceValid(this) && !IsQueuedForDeletion();
+    public bool CanAct => IsActive;
+
+    // Convenience accessors through Attributes
+    public int MaxHealth => AttributesComponent?.MaxIntegrity ?? BaseMaxHealth;
+    public int CurrentHealth => AttributesComponent?.CurrentIntegrity ?? BaseMaxHealth;
+    public int AttackDamage => AttributesComponent?.AttackDamage ?? BaseAttackDamage;
+    public int SightRange => AttributesComponent?.SightRange ?? BaseSightRange;
+
+    private bool _isDead = false;
 
     // AI State
     public enum AIState
@@ -38,7 +70,29 @@ public partial class Enemy : Entity, ITurnActor
     {
         base._Ready();
 
-        // Get or create health component
+        // Create or get Attributes component
+        AttributesComponent = GetNodeOrNull<Attributes>("Attributes");
+        if (AttributesComponent == null)
+        {
+            AttributesComponent = new Attributes
+            {
+                Name = "Attributes",
+                BaseIntegrity = BaseMaxHealth,
+                BaseAttackDamage = BaseAttackDamage,
+                BaseSightRange = BaseSightRange,
+                BaseArmor = 0,
+                BaseSpeed = BaseSpeed,
+                BaseEnergyOutput = BaseEnergyOutput,
+                BaseEnergyConsumption = 0,
+                BaseEnergyReserveCapacity = 50,
+                BaseNoise = BaseNoise
+            };
+            AddChild(AttributesComponent);
+        }
+        AttributesComponent.Initialize();
+        AttributesComponent.EntityDestroyed += OnDied;
+
+        // Get or create health component (for compatibility)
         HealthComponent = GetNodeOrNull<Health>("Health");
         if (HealthComponent == null)
         {
@@ -51,16 +105,45 @@ public partial class Enemy : Entity, ITurnActor
         HealthComponent.CurrentHealth = MaxHealth;
         HealthComponent.Died += OnDied;
 
-        // Register with turn manager
-        TurnManager.Instance.RegisterActor(this);
+        // Register with turn manager (legacy support)
+        TurnManager.Instance?.RegisterActor(this);
 
         // Find player reference
         _targetPlayer = GetTree().GetFirstNodeInGroup("Player") as Player;
+
+        // Initialize AI system
+        if (!SkipDefaultBehaviors)
+        {
+            InitializeBehaviors();
+        }
+        Memory.Initialize(GridPosition);
+
+        // Create behavior context
+        _behaviorContext = new BehaviorContext(this, Memory, TileMapManager.Instance, GetTree());
+    }
+
+    /// <summary>
+    /// Initialize the behavior selector with default behaviors.
+    /// Override in subclasses to customize AI behavior.
+    /// </summary>
+    protected virtual void InitializeBehaviors()
+    {
+        // Default behavior set: Attack > Chase > Wander
+        Behaviors.AddBehaviors(
+            new MeleeAttackBehavior(),
+            new ChaseBehavior(persistence: 5),
+            new WanderBehavior(moveChance: 0.5f)
+        );
     }
 
     public override void _ExitTree()
     {
         base._ExitTree();
+
+        if (AttributesComponent != null)
+        {
+            AttributesComponent.EntityDestroyed -= OnDied;
+        }
 
         if (HealthComponent != null)
         {
@@ -71,43 +154,77 @@ public partial class Enemy : Entity, ITurnActor
     }
 
     /// <summary>
-    /// Process this enemy's turn. Called by TurnManager.
+    /// IScheduledActor.TakeAction - executes AI turn and returns action cost.
     /// </summary>
-    public virtual async Task ProcessTurn()
+    public virtual async Task<int> TakeAction()
     {
-        if (!IsActive || HealthComponent?.IsDead == true)
-            return;
+        if (!IsActive)
+        {
+            GD.Print($"[{EntityName}] TakeAction: Not active, skipping");
+            return ActionCosts.Wait;
+        }
+
+        GD.Print($"[{EntityName}] TakeAction: Starting turn, {Behaviors.GetBehaviors().Count} behaviors registered");
+
+        // Process energy each turn
+        AttributesComponent?.ProcessEnergyTick();
 
         // Find player if not cached
         _targetPlayer ??= GetTree().GetFirstNodeInGroup("Player") as Player;
 
-        if (_targetPlayer == null)
+        // Update memory timers
+        Memory.OnTurnStart();
+
+        // Create or update behavior context
+        if (_behaviorContext == null)
+        {
+            _behaviorContext = new BehaviorContext(this, Memory, TileMapManager.Instance, GetTree());
+        }
+
+        // Update context with current target info
+        _behaviorContext.UpdateTargetInfo(_targetPlayer);
+
+        GD.Print($"[{EntityName}] Context: CanSeeTarget={_behaviorContext.CanSeeTarget}, Distance={_behaviorContext.DistanceToTarget}, Target={_targetPlayer?.EntityName ?? "null"}");
+
+        // Evaluate and execute behaviors
+        var result = await Behaviors.Evaluate(_behaviorContext);
+
+        GD.Print($"[{EntityName}] Result: {result.ActionTaken} (Success={result.Success}, Cost={result.ActionCost})");
+
+        // Update state for debugging/display
+        UpdateStateFromBehavior(Behaviors.LastExecutedBehavior);
+
+        return result.ActionCost;
+    }
+
+    /// <summary>
+    /// Update the AIState enum based on which behavior executed.
+    /// Used for debugging and status display.
+    /// </summary>
+    private void UpdateStateFromBehavior(IBehavior? behavior)
+    {
+        if (behavior == null)
+        {
+            CurrentState = AIState.Idle;
             return;
-
-        // Determine AI behavior based on distance to player
-        int distanceToPlayer = GetDistanceToPlayer();
-
-        if (distanceToPlayer <= 1)
-        {
-            // Adjacent to player - attack!
-            CurrentState = AIState.Attacking;
-            await AttackPlayer();
-        }
-        else if (distanceToPlayer <= SightRange)
-        {
-            // Can see player - chase!
-            CurrentState = AIState.Chasing;
-            await ChasePlayer();
-        }
-        else
-        {
-            // Can't see player - wander or idle
-            CurrentState = AIState.Wandering;
-            await Wander();
         }
 
-        // Small delay for visual feedback
-        await Task.Delay(50);
+        CurrentState = behavior.Name switch
+        {
+            "MeleeAttack" or "RangedAttack" => AIState.Attacking,
+            "Chase" or "Investigate" => AIState.Chasing,
+            "Flee" => AIState.Fleeing,
+            "Wander" or "Patrol" or "Guard" => AIState.Wandering,
+            _ => AIState.Idle
+        };
+    }
+
+    /// <summary>
+    /// Legacy ProcessTurn for compatibility with old TurnManager.
+    /// </summary>
+    public virtual async Task ProcessTurn()
+    {
+        await TakeAction();
     }
 
     /// <summary>
@@ -158,37 +275,49 @@ public partial class Enemy : Entity, ITurnActor
 
     /// <summary>
     /// Move towards the player.
+    /// Returns true if movement occurred.
     /// </summary>
-    protected virtual async Task ChasePlayer()
+    protected virtual async Task<bool> ChasePlayer()
     {
         var direction = GetDirectionToPlayer();
+        bool moved = false;
 
         // Try to move towards player, checking collision
-        if (!TryMoveInDirection(direction))
+        if (TryMoveInDirection(direction))
+        {
+            moved = true;
+        }
+        else if (direction.X != 0 && direction.Y != 0)
         {
             // If direct path blocked, try cardinal directions only
-            if (direction.X != 0 && direction.Y != 0)
+            // Try horizontal first
+            if (TryMoveInDirection(new Vector2I(direction.X, 0)))
             {
-                // Try horizontal first
-                if (!TryMoveInDirection(new Vector2I(direction.X, 0)))
-                {
-                    // Try vertical
-                    TryMoveInDirection(new Vector2I(0, direction.Y));
-                }
+                moved = true;
+            }
+            else if (TryMoveInDirection(new Vector2I(0, direction.Y)))
+            {
+                // Try vertical
+                moved = true;
             }
         }
 
         await Task.CompletedTask;
+        return moved;
     }
 
     /// <summary>
     /// Wander randomly.
+    /// Returns true if movement occurred.
     /// </summary>
-    protected virtual async Task Wander()
+    protected virtual async Task<bool> Wander()
     {
         // 50% chance to stay still
         if (GD.Randf() < 0.5f)
-            return;
+        {
+            await Task.CompletedTask;
+            return false;
+        }
 
         // Pick a random direction
         var directions = new Vector2I[]
@@ -198,13 +327,15 @@ public partial class Enemy : Entity, ITurnActor
         };
 
         var randomDir = directions[GD.RandRange(0, directions.Length - 1)];
-        TryMoveInDirection(randomDir);
+        bool moved = TryMoveInDirection(randomDir);
 
         await Task.CompletedTask;
+        return moved;
     }
 
     /// <summary>
     /// Try to move in a direction, checking for collisions.
+    /// Uses O(1) EntityGrid lookup instead of O(N) group iteration.
     /// </summary>
     protected bool TryMoveInDirection(Vector2I direction)
     {
@@ -214,17 +345,9 @@ public partial class Enemy : Entity, ITurnActor
         if (!TileMapManager.Instance.IsWalkable(newPosition))
             return false;
 
-        // Check collision with player
-        if (_targetPlayer != null && _targetPlayer.GridPosition == newPosition)
+        // O(1) check if position is occupied by any entity other than self
+        if (EntityGrid.Instance.IsOccupiedByOther(newPosition, this))
             return false;
-
-        // Check collision with other enemies
-        var enemies = GetTree().GetNodesInGroup("Enemies");
-        foreach (var node in enemies)
-        {
-            if (node is Enemy other && other != this && other.GridPosition == newPosition)
-                return false;
-        }
 
         // Move!
         Move(direction);
@@ -236,7 +359,7 @@ public partial class Enemy : Entity, ITurnActor
     /// </summary>
     protected virtual void OnDied()
     {
-        IsActive = false;
+        _isDead = true;
         GD.Print($"{EntityName} has been destroyed!");
 
         // Remove from scene after a short delay
@@ -250,6 +373,39 @@ public partial class Enemy : Entity, ITurnActor
     /// </summary>
     public void TakeDamage(int damage)
     {
-        HealthComponent?.TakeDamage(damage);
+        TakeDamage(damage, null);
+    }
+
+    /// <summary>
+    /// Take damage from an attack, with attacker position for AI alerting.
+    /// </summary>
+    public void TakeDamage(int damage, Vector2I? attackerPosition)
+    {
+        if (AttributesComponent != null)
+        {
+            AttributesComponent.TakeDamage(damage);
+        }
+        else
+        {
+            // Fallback to legacy health component
+            HealthComponent?.TakeDamage(damage);
+        }
+
+        // Alert the enemy AI when taking damage
+        if (attackerPosition.HasValue)
+        {
+            // Fully alert - we know exactly where the attack came from
+            Memory.AlertLevel = 100;
+            Memory.LastKnownTargetPos = attackerPosition.Value;
+            Memory.TurnsSinceTargetSeen = 0;
+            Memory.InvalidatePath(); // Recalculate path to attacker
+            GD.Print($"[Enemy] {EntityName} alerted by damage from {attackerPosition.Value}!");
+        }
+        else
+        {
+            // Partially alert - we took damage but don't know from where
+            Memory.AlertLevel = Mathf.Max(Memory.AlertLevel, 75);
+            GD.Print($"[Enemy] {EntityName} alerted by damage (source unknown)!");
+        }
     }
 }

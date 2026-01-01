@@ -1,5 +1,5 @@
-using Godot;
 using System.Collections.Generic;
+using Godot;
 using NullAndVoid.World;
 
 namespace NullAndVoid.Systems;
@@ -14,6 +14,26 @@ public class FOVSystem
     private readonly HashSet<Vector2I> _exploredTiles = new();
     private int _viewRadius;
     private Vector2I _origin;
+
+    // Custom blocking check function (for integration with different map systems)
+    private System.Func<Vector2I, bool>? _customBlockingCheck;
+
+    /// <summary>
+    /// Set a custom function to check if a tile blocks sight.
+    /// If not set, falls back to TileMapManager.
+    /// </summary>
+    public void SetBlockingCheck(System.Func<Vector2I, bool> blockingCheck)
+    {
+        _customBlockingCheck = blockingCheck;
+    }
+
+    /// <summary>
+    /// Clear the custom blocking check (revert to TileMapManager).
+    /// </summary>
+    public void ClearBlockingCheck()
+    {
+        _customBlockingCheck = null;
+    }
 
     // Multipliers for the eight octants of the FOV
     private static readonly int[,] Multipliers = new int[,]
@@ -104,8 +124,17 @@ public class FOVSystem
                 }
 
                 // Check if tile blocks vision
-                bool isBlocking = !TileMapManager.Instance.IsInBounds(mapPos) ||
+                bool isBlocking;
+                if (_customBlockingCheck != null)
+                {
+                    isBlocking = _customBlockingCheck(mapPos);
+                }
+                else
+                {
+                    // Fallback to TileMapManager
+                    isBlocking = !TileMapManager.Instance.IsInBounds(mapPos) ||
                                   TileMapManager.Instance.GetTileAt(mapPos) == TileMapManager.TileType.Wall;
+                }
 
                 if (blocked)
                 {

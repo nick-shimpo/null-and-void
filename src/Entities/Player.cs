@@ -1,36 +1,40 @@
-using Godot;
 using System;
-using NullAndVoid.Core;
-using NullAndVoid.World;
-using NullAndVoid.Systems;
+using System.Threading.Tasks;
+using Godot;
 using NullAndVoid.Components;
+using NullAndVoid.Core;
+using NullAndVoid.Systems;
+using NullAndVoid.World;
 
 namespace NullAndVoid.Entities;
 
 /// <summary>
 /// The player character "Null" - a sentient AI seeking revenge.
+/// Implements IScheduledActor for energy-based turn scheduling.
 /// </summary>
-public partial class Player : Entity
+public partial class Player : Entity, IScheduledActor
 {
-    [Export] public int BaseMaxHealth { get; set; } = 100;
-    [Export] public int BaseAttackDamage { get; set; } = 10;
-    [Export] public int BaseSightRange { get; set; } = 10;
-    [Export] public int BaseArmor { get; set; } = 0;
-
-    // Current health tracks actual HP
-    public int CurrentHealth { get; set; } = 100;
-
-    // Computed stats including equipment bonuses
-    public int MaxHealth => BaseMaxHealth + (EquipmentComponent?.TotalBonusHealth ?? 0);
-    public int AttackDamage => BaseAttackDamage + (EquipmentComponent?.TotalBonusDamage ?? 0);
-    public int SightRange => BaseSightRange + (EquipmentComponent?.TotalBonusSightRange ?? 0);
-    public int Armor => BaseArmor + (EquipmentComponent?.TotalBonusArmor ?? 0);
-
     // Components
+    public Attributes? AttributesComponent { get; private set; }
     public Inventory? InventoryComponent { get; private set; }
     public Equipment? EquipmentComponent { get; private set; }
 
-    private bool _canAct = true;
+    // Convenience accessors through Attributes
+    public int CurrentHealth => AttributesComponent?.CurrentIntegrity ?? 0;
+    public int MaxHealth => AttributesComponent?.MaxIntegrity ?? 100;
+    public int AttackDamage => AttributesComponent?.AttackDamage ?? 10;
+    public int SightRange => AttributesComponent?.SightRange ?? 10;
+    public int Armor => AttributesComponent?.Armor ?? 0;
+
+    // IScheduledActor implementation
+    public string ActorName => EntityName;
+    public int Speed => AttributesComponent?.Speed ?? 100;
+    public bool IsActive => IsInstanceValid(this) && !IsQueuedForDeletion();
+    public bool CanAct => _canAct && GameState.Instance.CurrentState == GameState.State.Playing;
+
+    private bool _canAct = false;
+    private TaskCompletionSource<int>? _actionCompletionSource;
+    private int _lastActionCost = ActionCosts.Move;
 
     public override void _Ready()
     {
@@ -39,6 +43,27 @@ public partial class Player : Entity
 
         // Add to player group for enemy targeting
         AddToGroup("Player");
+
+        // Create or get Attributes component
+        AttributesComponent = GetNodeOrNull<Attributes>("Attributes");
+        if (AttributesComponent == null)
+        {
+            AttributesComponent = new Attributes
+            {
+                Name = "Attributes",
+                BaseIntegrity = 100,
+                BaseAttackDamage = 10,
+                BaseSightRange = 10,
+                BaseArmor = 0,
+                BaseSpeed = 100,
+                BaseEnergyOutput = 15,  // Player has built-in power core
+                BaseEnergyConsumption = 0,
+                BaseEnergyReserveCapacity = 100,
+                BaseNoise = 50
+            };
+            AddChild(AttributesComponent);
+        }
+        AttributesComponent.Initialize();
 
         // Create or get inventory component
         InventoryComponent = GetNodeOrNull<Inventory>("Inventory");
@@ -56,15 +81,22 @@ public partial class Player : Entity
             AddChild(EquipmentComponent);
         }
 
-        // Initialize health
-        CurrentHealth = MaxHealth;
+        // Link Equipment to Attributes for stat updates
+        EquipmentComponent.SetAttributesComponent(AttributesComponent);
 
         // Subscribe to turn events
         EventBus.Instance.PlayerTurnStarted += OnPlayerTurnStarted;
         EventBus.Instance.PlayerTurnEnded += OnPlayerTurnEnded;
 
-        // Subscribe to equipment changes to update stats
+        // Subscribe to attribute events
+        AttributesComponent.EnergyDepleted += OnEnergyDepleted;
+        AttributesComponent.EntityDestroyed += OnEntityDestroyed;
+
+        // Subscribe to equipment changes
         EquipmentComponent.EquipmentChanged += OnEquipmentChanged;
+
+        // Register with energy scheduler
+        TurnManager.Instance?.RegisterScheduledActor(this);
     }
 
     public override void _ExitTree()
@@ -78,19 +110,40 @@ public partial class Player : Entity
             EventBus.Instance.PlayerTurnEnded -= OnPlayerTurnEnded;
         }
 
+        if (AttributesComponent != null)
+        {
+            AttributesComponent.EnergyDepleted -= OnEnergyDepleted;
+            AttributesComponent.EntityDestroyed -= OnEntityDestroyed;
+        }
+
         if (EquipmentComponent != null)
         {
             EquipmentComponent.EquipmentChanged -= OnEquipmentChanged;
         }
+
+        // Unregister from scheduler
+        TurnManager.Instance?.UnregisterScheduledActor(this);
     }
 
     private void OnEquipmentChanged()
     {
-        // Cap current health to new max health if it decreased
-        if (CurrentHealth > MaxHealth)
+        // Attributes component handles capping values automatically
+    }
+
+    private void OnEnergyDepleted()
+    {
+        // Emergency shutdown - deactivate high-consumption modules
+        if (EquipmentComponent != null && AttributesComponent != null)
         {
-            CurrentHealth = MaxHealth;
+            int deficit = -AttributesComponent.EnergyBalance;
+            EquipmentComponent.ForceDeactivateModules(deficit);
+            GD.Print("WARNING: Energy depleted! Modules shutting down.");
         }
+    }
+
+    private void OnEntityDestroyed()
+    {
+        Die();
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -122,7 +175,7 @@ public partial class Player : Entity
         else if (@event.IsActionPressed("wait_turn"))
         {
             // Wait in place (skip turn)
-            EndTurn();
+            CompleteAction(ActionCosts.Wait);
             return;
         }
 
@@ -130,6 +183,34 @@ public partial class Player : Entity
         {
             TryMove(moveDirection);
         }
+    }
+
+    /// <summary>
+    /// IScheduledActor.TakeAction - waits for player input.
+    /// </summary>
+    public Task<int> TakeAction()
+    {
+        _actionCompletionSource = new TaskCompletionSource<int>();
+        _canAct = true;
+
+        // Process energy each turn
+        AttributesComponent?.ProcessEnergyTick();
+
+        return _actionCompletionSource.Task;
+    }
+
+    /// <summary>
+    /// Complete the current action with the specified energy cost.
+    /// Called internally or externally (e.g., from targeting system).
+    /// </summary>
+    public void CompleteAction(int actionCost)
+    {
+        _canAct = false;
+        _lastActionCost = actionCost;
+        _actionCompletionSource?.TrySetResult(actionCost);
+
+        // Notify TurnManager with the action cost for proper scheduling
+        TurnManager.Instance?.EndPlayerTurnWithCost(actionCost);
     }
 
     private void TryMove(Vector2I direction)
@@ -149,21 +230,15 @@ public partial class Player : Entity
         {
             // Attack the enemy
             CombatSystem.PerformMeleeAttack(this, enemy, AttackDamage);
-            EndTurn();
+            CompleteAction(ActionCosts.Attack);
             return;
         }
 
         // Move to empty space
         if (Move(direction))
         {
-            EndTurn();
+            CompleteAction(ActionCosts.Move);
         }
-    }
-
-    private void EndTurn()
-    {
-        _canAct = false;
-        TurnManager.Instance.EndPlayerTurn();
     }
 
     private void OnPlayerTurnStarted()
@@ -178,14 +253,26 @@ public partial class Player : Entity
 
     public void TakeDamage(int rawDamage)
     {
-        // Apply armor reduction (minimum 1 damage)
-        int actualDamage = Mathf.Max(1, rawDamage - Armor);
-        CurrentHealth -= actualDamage;
-        EventBus.Instance.EmitEntityDamaged(this, actualDamage, CurrentHealth);
+        if (AttributesComponent == null)
+            return;
 
-        if (CurrentHealth <= 0)
+        // First, route damage through equipped modules (shields first, then weighted)
+        int remainingDamage = rawDamage;
+        if (EquipmentComponent != null)
         {
-            Die();
+            remainingDamage = EquipmentComponent.RouteDamageToModules(rawDamage);
+        }
+
+        // Apply remaining damage to core integrity (with armor reduction)
+        if (remainingDamage > 0)
+        {
+            int actualDamage = AttributesComponent.TakeDamage(remainingDamage);
+            EventBus.Instance.EmitEntityDamaged(this, actualDamage, CurrentHealth);
+        }
+        else
+        {
+            // All damage absorbed by modules
+            EventBus.Instance.EmitEntityDamaged(this, 0, CurrentHealth);
         }
     }
 
@@ -193,5 +280,13 @@ public partial class Player : Entity
     {
         EventBus.Instance.EmitEntityDied(this);
         GameState.Instance.TransitionTo(GameState.State.GameOver);
+    }
+
+    /// <summary>
+    /// Get debug info for display.
+    /// </summary>
+    public string GetAttributeDebugString()
+    {
+        return AttributesComponent?.GetDebugString() ?? "No attributes";
     }
 }

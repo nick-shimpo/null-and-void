@@ -1,5 +1,5 @@
-using Godot;
 using System;
+using Godot;
 using NullAndVoid.Components;
 using NullAndVoid.Items;
 
@@ -138,7 +138,8 @@ public partial class AISchematic : Control
 
     private void OnSlotPressed(EquipmentSlotType slotType, int index)
     {
-        if (_equipment == null) return;
+        if (_equipment == null)
+            return;
 
         var item = _equipment.GetItemInSlot(slotType, index);
         SlotSelected?.Invoke(item, true, slotType, index);
@@ -146,7 +147,8 @@ public partial class AISchematic : Control
 
     private void UpdateSlotDisplay()
     {
-        if (_equipment == null) return;
+        if (_equipment == null)
+            return;
 
         // Update Core slots
         for (int i = 0; i < 2; i++)
@@ -169,7 +171,8 @@ public partial class AISchematic : Control
 
     private void UpdateSlotButton(Button button, EquipmentSlotType slotType, int index)
     {
-        if (_equipment == null) return;
+        if (_equipment == null)
+            return;
 
         var item = _equipment.GetItemInSlot(slotType, index);
         var slotColor = TerminalTheme.GetSlotColor(slotType);

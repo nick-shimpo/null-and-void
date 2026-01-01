@@ -1,8 +1,8 @@
 using Godot;
 using NullAndVoid.Entities;
-using NullAndVoid.World;
-using NullAndVoid.UI;
 using NullAndVoid.Items;
+using NullAndVoid.UI;
+using NullAndVoid.World;
 
 namespace NullAndVoid.Core;
 
@@ -106,12 +106,16 @@ public partial class Game : Node2D
         if (_player?.InventoryComponent == null || _player.EquipmentComponent == null)
             return;
 
-        // Give 2 starter items and equip them
-        var blaster = ItemFactory.CreateStarterWeapon();
+        // Weapons go in Utility slots
+        var meleeWeapon = ItemFactory.CreateStarterWeapon();      // Plasma Cutter
+        var rangedWeapon = ItemFactory.CreateStarterRangedWeapon(); // Nail Gun
+
+        // Armor goes in Base slot
         var plating = ItemFactory.CreateStarterArmor();
 
-        // Equip starter items
-        _player.EquipmentComponent.Equip(blaster, EquipmentSlotType.Core, 0);
+        // Equip weapons in utility slots (hotkeys 1 and 2)
+        _player.EquipmentComponent.Equip(meleeWeapon, EquipmentSlotType.Utility, 0);
+        _player.EquipmentComponent.Equip(rangedWeapon, EquipmentSlotType.Utility, 1);
         _player.EquipmentComponent.Equip(plating, EquipmentSlotType.Base, 0);
 
         // Add a few random items to inventory for testing
@@ -184,19 +188,10 @@ public partial class Game : Node2D
         {
             EntityName = name,
             GridPosition = position,
-            MaxHealth = 15,
-            AttackDamage = 5,
-            SightRange = 6
+            BaseMaxHealth = 15,
+            BaseAttackDamage = 5,
+            BaseSightRange = 6
         };
-
-        // Add visual representation
-        var sprite = new ColorRect
-        {
-            Color = new Color(1.0f, 0.2f, 0.2f),
-            Size = new Vector2(20, 20),
-            Position = new Vector2(-10, -10)
-        };
-        enemy.AddChild(sprite);
 
         // Add to enemies group
         enemy.AddToGroup("Enemies");

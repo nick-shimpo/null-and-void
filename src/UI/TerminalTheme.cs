@@ -77,10 +77,14 @@ public static class TerminalTheme
     public static string FormatStats(int damage, int armor, int health, int sight)
     {
         var parts = new System.Collections.Generic.List<string>();
-        if (damage > 0) parts.Add($"[DMG +{damage}]");
-        if (armor > 0) parts.Add($"[ARM +{armor}]");
-        if (health > 0) parts.Add($"[HP +{health}]");
-        if (sight > 0) parts.Add($"[SIG +{sight}]");
+        if (damage > 0)
+            parts.Add($"[DMG +{damage}]");
+        if (armor > 0)
+            parts.Add($"[ARM +{armor}]");
+        if (health > 0)
+            parts.Add($"[HP +{health}]");
+        if (sight > 0)
+            parts.Add($"[SIG +{sight}]");
         return parts.Count > 0 ? string.Join(" ", parts) : "[NO STATS]";
     }
 

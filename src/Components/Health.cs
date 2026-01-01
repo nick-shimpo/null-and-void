@@ -31,7 +31,8 @@ public partial class Health : Node
     /// </summary>
     public int TakeDamage(int rawDamage, Node? attacker = null)
     {
-        if (IsDead) return 0;
+        if (IsDead)
+            return 0;
 
         // Apply armor reduction
         int actualDamage = Mathf.Max(1, rawDamage - Armor);
@@ -59,7 +60,8 @@ public partial class Health : Node
     /// </summary>
     public int Heal(int amount)
     {
-        if (IsDead) return 0;
+        if (IsDead)
+            return 0;
 
         int previousHealth = CurrentHealth;
         CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
