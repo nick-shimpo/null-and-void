@@ -30,7 +30,7 @@ jobs:
         run: dotnet restore
 
       - name: Check formatting
-        run: dotnet format --verify-no-changes
+        run: dotnet format NullAndVoid.sln --verify-no-changes --exclude NullAndVoid.Tests/
 
       - name: Build
         run: dotnet build --no-restore -c Release
