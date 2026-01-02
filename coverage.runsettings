@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Exclude>[NullAndVoid]GodotPlugins.*,[NullAndVoid]NullAndVoid.UI.*,[NullAndVoid]NullAndVoid.Rendering.*,[NullAndVoid]NullAndVoid.Sandbox.*,[NullAndVoid]NullAndVoid.Battlefield.*,[NullAndVoid]NullAndVoid.Effects.*,[NullAndVoid]NullAndVoid.Debug.*,[NullAndVoid]NullAndVoid.Core.Game,[NullAndVoid]NullAndVoid.Core.ASCIIGame*,[NullAndVoid]NullAndVoid.Core.EnergyScheduler,[NullAndVoid]NullAndVoid.Core.EventBus,[NullAndVoid]NullAndVoid.Core.TurnManager,[NullAndVoid]NullAndVoid.Core.GameState,[NullAndVoid]NullAndVoid.World.*,[NullAndVoid]NullAndVoid.Entities.*,[NullAndVoid]NullAndVoid.Systems.*,[NullAndVoid]NullAndVoid.Targeting.TargetingSystem,[NullAndVoid]NullAndVoid.Targeting.TargetingManager,[NullAndVoid]NullAndVoid.Targeting.TargetingRenderer,[NullAndVoid]NullAndVoid.Targeting.TargetInfo,[NullAndVoid]NullAndVoid.Components.*,[NullAndVoid]NullAndVoid.Destruction.*,[NullAndVoid]NullAndVoid.AI.*,[NullAndVoid]NullAndVoid.Items.ItemFactory,[NullAndVoid]NullAndVoid.Items.AmmoFactory,[NullAndVoid]NullAndVoid.Items.Ammunition,[NullAndVoid]NullAndVoid.Items.Item,[NullAndVoid]NullAndVoid.Combat.WeaponFactory,[NullAndVoid]NullAndVoid.Combat.CombatResolver,[NullAndVoid]NullAndVoid.Combat.SeekerManager,[NullAndVoid]NullAndVoid.Combat.SeekerProjectile,[NullAndVoid]NullAndVoid.Combat.AutoFireController,[NullAndVoid]NullAndVoid.Combat.ArcCalculator,[NullAndVoid]NullAndVoid.Combat.PenetrationCalculator,[NullAndVoid]NullAndVoid.Combat.PenetrationResult,[NullAndVoid]NullAndVoid.Combat.WeaponData,[NullAndVoid]NullAndVoid.Combat.CombatResult,[NullAndVoid]NullAndVoid.Combat.ArcResult</Exclude>
+          <ExcludeByFile>**/.godot/**,**/obj/**</ExcludeByFile>
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

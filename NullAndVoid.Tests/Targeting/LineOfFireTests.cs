@@ -344,4 +344,37 @@ public class LineOfFireTests
     }
 
     #endregion
+
+    #region LineOfFire Check Tests
+
+    [Fact]
+    public void Check_SamePosition_ReturnsClear()
+    {
+        // Arrange
+        var position = new Vector2I(5, 5);
+
+        // Act
+        var result = LineOfFire.Check(position, position, 10);
+
+        // Assert
+        result.Result.Should().Be(LineOfFireResult.Clear);
+        result.Distance.Should().Be(0);
+    }
+
+    [Fact]
+    public void Check_BeyondMaxRange_ReturnsOutOfRange()
+    {
+        // Arrange
+        var origin = new Vector2I(0, 0);
+        var target = new Vector2I(15, 0);
+
+        // Act
+        var result = LineOfFire.Check(origin, target, 10);
+
+        // Assert
+        result.Result.Should().Be(LineOfFireResult.OutOfRange);
+        result.Distance.Should().Be(15);
+    }
+
+    #endregion
 }

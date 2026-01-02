@@ -6,6 +6,11 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Code coverage configuration -->
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    <ExcludeByFile>**/.godot/**/*,**/obj/**/*</ExcludeByFile>
+    <Exclude>[NullAndVoid]GodotPlugins.*,[NullAndVoid]NullAndVoid.UI.*,[NullAndVoid]NullAndVoid.Rendering.*,[NullAndVoid]NullAndVoid.Sandbox.*,[NullAndVoid]NullAndVoid.Battlefield.*,[NullAndVoid]NullAndVoid.Effects.*,[NullAndVoid]NullAndVoid.Debug.*,[NullAndVoid]NullAndVoid.Core.Game,[NullAndVoid]NullAndVoid.Core.ASCIIGame*,[NullAndVoid]NullAndVoid.World.TileMapManager,[NullAndVoid]NullAndVoid.Entities.Player,[NullAndVoid]NullAndVoid.Entities.Enemy,[NullAndVoid]NullAndVoid.Entities.Entity</Exclude>
   </PropertyGroup>
 
   <ItemGroup>

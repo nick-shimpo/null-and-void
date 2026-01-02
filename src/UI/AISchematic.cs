@@ -41,9 +41,9 @@ public partial class AISchematic : Control
     private Vector2 BaseSlot2Pos => new(Size.X / 2 + 15, 320);
 
     // Slot sizes
-    private static readonly Vector2 CoreSlotSize = new(70, 40);
-    private static readonly Vector2 UtilitySlotSize = new(55, 50);
-    private static readonly Vector2 BaseSlotSize = new(80, 45);
+    private static readonly Vector2 _coreSlotSize = new(70, 40);
+    private static readonly Vector2 _utilitySlotSize = new(55, 50);
+    private static readonly Vector2 _baseSlotSize = new(80, 45);
 
     // Events
     public event Action<Item?, bool, EquipmentSlotType, int>? SlotSelected;
@@ -90,7 +90,7 @@ public partial class AISchematic : Control
         {
             _coreSlots[i] = CreateSlotButton(EquipmentSlotType.Core, i);
             _coreSlots[i].Position = i == 0 ? CoreSlot1Pos : CoreSlot2Pos;
-            _coreSlots[i].Size = CoreSlotSize;
+            _coreSlots[i].Size = _coreSlotSize;
             AddChild(_coreSlots[i]);
         }
 
@@ -99,7 +99,7 @@ public partial class AISchematic : Control
         {
             _utilitySlots[i] = CreateSlotButton(EquipmentSlotType.Utility, i);
             _utilitySlots[i].Position = i == 0 ? UtilitySlot1Pos : UtilitySlot2Pos;
-            _utilitySlots[i].Size = UtilitySlotSize;
+            _utilitySlots[i].Size = _utilitySlotSize;
             AddChild(_utilitySlots[i]);
         }
 
@@ -108,7 +108,7 @@ public partial class AISchematic : Control
         {
             _baseSlots[i] = CreateSlotButton(EquipmentSlotType.Base, i);
             _baseSlots[i].Position = i == 0 ? BaseSlot1Pos : BaseSlot2Pos;
-            _baseSlots[i].Size = BaseSlotSize;
+            _baseSlots[i].Size = _baseSlotSize;
             AddChild(_baseSlots[i]);
         }
     }
@@ -204,8 +204,8 @@ public partial class AISchematic : Control
         var lineWidth = 1.5f;
 
         // Core slot connections (vertical down to brain)
-        var core1Bottom = CoreSlot1Pos + new Vector2(CoreSlotSize.X / 2, CoreSlotSize.Y);
-        var core2Bottom = CoreSlot2Pos + new Vector2(CoreSlotSize.X / 2, CoreSlotSize.Y);
+        var core1Bottom = CoreSlot1Pos + new Vector2(_coreSlotSize.X / 2, _coreSlotSize.Y);
+        var core2Bottom = CoreSlot2Pos + new Vector2(_coreSlotSize.X / 2, _coreSlotSize.Y);
         var coreTop = CoreCenter - new Vector2(0, CoreOuterRadius);
 
         DrawLine(core1Bottom, new Vector2(core1Bottom.X, coreTop.Y - 10), TerminalTheme.SlotCore * 0.7f, lineWidth);
@@ -215,8 +215,8 @@ public partial class AISchematic : Control
         DrawLine(new Vector2(core2Bottom.X, coreTop.Y - 10), coreTop, TerminalTheme.SlotCore * 0.7f, lineWidth);
 
         // Utility slot connections (horizontal to brain sides)
-        var util1Right = UtilitySlot1Pos + new Vector2(UtilitySlotSize.X, UtilitySlotSize.Y / 2);
-        var util2Left = UtilitySlot2Pos + new Vector2(0, UtilitySlotSize.Y / 2);
+        var util1Right = UtilitySlot1Pos + new Vector2(_utilitySlotSize.X, _utilitySlotSize.Y / 2);
+        var util2Left = UtilitySlot2Pos + new Vector2(0, _utilitySlotSize.Y / 2);
         var coreLeft = CoreCenter - new Vector2(CoreOuterRadius, 0);
         var coreRight = CoreCenter + new Vector2(CoreOuterRadius, 0);
 
@@ -224,8 +224,8 @@ public partial class AISchematic : Control
         DrawLine(util2Left, coreRight, TerminalTheme.SlotUtility * 0.7f, lineWidth);
 
         // Base slot connections (through data bus)
-        var base1Top = BaseSlot1Pos + new Vector2(BaseSlotSize.X / 2, 0);
-        var base2Top = BaseSlot2Pos + new Vector2(BaseSlotSize.X / 2, 0);
+        var base1Top = BaseSlot1Pos + new Vector2(_baseSlotSize.X / 2, 0);
+        var base2Top = BaseSlot2Pos + new Vector2(_baseSlotSize.X / 2, 0);
         var coreBottom = CoreCenter + new Vector2(0, CoreOuterRadius);
         var busY = BaseSlot1Pos.Y - 25;
 
@@ -287,19 +287,19 @@ public partial class AISchematic : Control
         var coreLabelY = CoreSlot1Pos.Y - 15;
         DrawLine(
             new Vector2(CoreSlot1Pos.X, coreLabelY),
-            new Vector2(CoreSlot2Pos.X + CoreSlotSize.X, coreLabelY),
+            new Vector2(CoreSlot2Pos.X + _coreSlotSize.X, coreLabelY),
             TerminalTheme.SlotCore * 0.5f, 1f
         );
 
         // Utility indicators (side markers)
         DrawRect(new Rect2(UtilitySlot1Pos.X - 8, UtilitySlot1Pos.Y + 15, 4, 20), TerminalTheme.SlotUtility * 0.5f);
-        DrawRect(new Rect2(UtilitySlot2Pos.X + UtilitySlotSize.X + 4, UtilitySlot2Pos.Y + 15, 4, 20), TerminalTheme.SlotUtility * 0.5f);
+        DrawRect(new Rect2(UtilitySlot2Pos.X + _utilitySlotSize.X + 4, UtilitySlot2Pos.Y + 15, 4, 20), TerminalTheme.SlotUtility * 0.5f);
 
         // Base label area (bottom)
-        var baseLabelY = BaseSlot1Pos.Y + BaseSlotSize.Y + 10;
+        var baseLabelY = BaseSlot1Pos.Y + _baseSlotSize.Y + 10;
         DrawLine(
             new Vector2(BaseSlot1Pos.X, baseLabelY),
-            new Vector2(BaseSlot2Pos.X + BaseSlotSize.X, baseLabelY),
+            new Vector2(BaseSlot2Pos.X + _baseSlotSize.X, baseLabelY),
             TerminalTheme.SlotBase * 0.5f, 1f
         );
     }

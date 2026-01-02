@@ -36,7 +36,7 @@ public class FOVSystem
     }
 
     // Multipliers for the eight octants of the FOV
-    private static readonly int[,] Multipliers = new int[,]
+    private static readonly int[,] _multipliers = new int[,]
     {
         { 1, 0, 0, -1, -1, 0, 0, 1 },
         { 0, 1, -1, 0, 0, -1, 1, 0 },
@@ -64,8 +64,8 @@ public class FOVSystem
         for (int octant = 0; octant < 8; octant++)
         {
             CastLight(1, 1.0f, 0.0f,
-                Multipliers[0, octant], Multipliers[1, octant],
-                Multipliers[2, octant], Multipliers[3, octant]);
+                _multipliers[0, octant], _multipliers[1, octant],
+                _multipliers[2, octant], _multipliers[3, octant]);
         }
     }
 

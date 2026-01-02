@@ -13,14 +13,14 @@ public static class ItemFactory
     private static readonly Random _random = new();
 
     // Item name prefixes by rarity
-    private static readonly string[] CommonPrefixes = { "Basic", "Standard", "Simple", "Old" };
-    private static readonly string[] UncommonPrefixes = { "Enhanced", "Improved", "Modified", "Tuned" };
-    private static readonly string[] RarePrefixes = { "Advanced", "Superior", "Refined", "Precision" };
-    private static readonly string[] EpicPrefixes = { "Elite", "Prototype", "Experimental", "Quantum" };
-    private static readonly string[] LegendaryPrefixes = { "Ancient", "Mythic", "Omega", "Prime" };
+    private static readonly string[] _commonPrefixes = { "Basic", "Standard", "Simple", "Old" };
+    private static readonly string[] _uncommonPrefixes = { "Enhanced", "Improved", "Modified", "Tuned" };
+    private static readonly string[] _rarePrefixes = { "Advanced", "Superior", "Refined", "Precision" };
+    private static readonly string[] _epicPrefixes = { "Elite", "Prototype", "Experimental", "Quantum" };
+    private static readonly string[] _legendaryPrefixes = { "Ancient", "Mythic", "Omega", "Prime" };
 
     // Base module names by slot type - organized by category
-    private static readonly Dictionary<EquipmentSlotType, string[]> ModuleNames = new()
+    private static readonly Dictionary<EquipmentSlotType, string[]> _moduleNames = new()
     {
         { EquipmentSlotType.Core, new[] { "Processor", "Combat Matrix", "Targeting System", "Neural Link" } },
         { EquipmentSlotType.Utility, new[] { "Scanner", "Shield Generator", "Sensor Array", "Cloak Device" } },
@@ -28,13 +28,13 @@ public static class ItemFactory
     };
 
     // Power source names
-    private static readonly string[] PowerSourceNames = { "Reactor", "Power Core", "Fusion Cell", "Generator", "Energy Matrix" };
+    private static readonly string[] _powerSourceNames = { "Reactor", "Power Core", "Fusion Cell", "Generator", "Energy Matrix" };
 
     // Battery/capacitor names
-    private static readonly string[] BatteryNames = { "Battery Pack", "Capacitor", "Energy Cell", "Reserve Tank", "Power Buffer" };
+    private static readonly string[] _batteryNames = { "Battery Pack", "Capacitor", "Energy Cell", "Reserve Tank", "Power Buffer" };
 
     // Propulsion names (with their base speed bonuses and costs)
-    private static readonly (string name, int speedBonus, int energyCost)[] PropulsionTypes = {
+    private static readonly (string name, int speedBonus, int energyCost)[] _propulsionTypes = {
         ("Treads", -20, 2),         // Slow but stable
         ("Wheels", 0, 3),           // Standard
         ("Legs", 10, 4),            // Agile
@@ -43,10 +43,10 @@ public static class ItemFactory
     };
 
     // Stealth module names
-    private static readonly string[] StealthNames = { "Noise Dampener", "Silent Runner", "Stealth Field", "Muffler", "Acoustic Cloak" };
+    private static readonly string[] _stealthNames = { "Noise Dampener", "Silent Runner", "Stealth Field", "Muffler", "Acoustic Cloak" };
 
     // Rarity colors
-    private static readonly Dictionary<ItemRarity, Color> RarityColors = new()
+    private static readonly Dictionary<ItemRarity, Color> _rarityColors = new()
     {
         { ItemRarity.Common, new Color(0.7f, 0.7f, 0.7f) },
         { ItemRarity.Uncommon, new Color(0.3f, 0.9f, 0.3f) },
@@ -96,7 +96,7 @@ public static class ItemFactory
     {
         // Get name components
         string prefix = GetPrefix(rarity);
-        string baseName = ModuleNames[slotType][_random.Next(ModuleNames[slotType].Length)];
+        string baseName = _moduleNames[slotType][_random.Next(_moduleNames[slotType].Length)];
 
         // Determine ModuleCategory based on slot type and name
         ModuleType moduleCategory = DetermineModuleCategory(slotType, baseName);
@@ -107,7 +107,7 @@ public static class ItemFactory
             Name = $"{prefix} {baseName}",
             SlotType = slotType,
             Rarity = rarity,
-            DisplayColor = RarityColors[rarity],
+            DisplayColor = _rarityColors[rarity],
             ModuleCategory = moduleCategory,
             IsIdentified = false  // New modules start unidentified
         };
@@ -174,11 +174,11 @@ public static class ItemFactory
     {
         return rarity switch
         {
-            ItemRarity.Common => CommonPrefixes[_random.Next(CommonPrefixes.Length)],
-            ItemRarity.Uncommon => UncommonPrefixes[_random.Next(UncommonPrefixes.Length)],
-            ItemRarity.Rare => RarePrefixes[_random.Next(RarePrefixes.Length)],
-            ItemRarity.Epic => EpicPrefixes[_random.Next(EpicPrefixes.Length)],
-            ItemRarity.Legendary => LegendaryPrefixes[_random.Next(LegendaryPrefixes.Length)],
+            ItemRarity.Common => _commonPrefixes[_random.Next(_commonPrefixes.Length)],
+            ItemRarity.Uncommon => _uncommonPrefixes[_random.Next(_uncommonPrefixes.Length)],
+            ItemRarity.Rare => _rarePrefixes[_random.Next(_rarePrefixes.Length)],
+            ItemRarity.Epic => _epicPrefixes[_random.Next(_epicPrefixes.Length)],
+            ItemRarity.Legendary => _legendaryPrefixes[_random.Next(_legendaryPrefixes.Length)],
             _ => "Unknown"
         };
     }
@@ -236,7 +236,7 @@ public static class ItemFactory
     {
         int rarityMultiplier = (int)rarity + 1;
         string prefix = GetPrefix(rarity);
-        string baseName = PowerSourceNames[_random.Next(PowerSourceNames.Length)];
+        string baseName = _powerSourceNames[_random.Next(_powerSourceNames.Length)];
 
         // Power output scales with rarity: 5-8 common, up to 20-30 legendary
         int baseOutput = 5 + _random.Next(0, 4);
@@ -247,7 +247,7 @@ public static class ItemFactory
             Name = $"{prefix} {baseName}",
             SlotType = EquipmentSlotType.Core,
             Rarity = rarity,
-            DisplayColor = RarityColors[rarity],
+            DisplayColor = _rarityColors[rarity],
             ModuleCategory = ModuleType.Generator,
             IsIdentified = false,
             BootCost = 3 + (int)rarity,
@@ -267,7 +267,7 @@ public static class ItemFactory
     {
         int rarityMultiplier = (int)rarity + 1;
         string prefix = GetPrefix(rarity);
-        string baseName = BatteryNames[_random.Next(BatteryNames.Length)];
+        string baseName = _batteryNames[_random.Next(_batteryNames.Length)];
 
         // Capacity scales with rarity: 20-30 common, up to 80-120 legendary
         int baseCapacity = 20 + _random.Next(0, 11);
@@ -278,7 +278,7 @@ public static class ItemFactory
             Name = $"{prefix} {baseName}",
             SlotType = EquipmentSlotType.Core,  // Battery goes in Core per requirements
             Rarity = rarity,
-            DisplayColor = RarityColors[rarity],
+            DisplayColor = _rarityColors[rarity],
             ModuleCategory = ModuleType.Battery,
             IsIdentified = false,
             BootCost = 2 + (int)rarity,
@@ -299,8 +299,8 @@ public static class ItemFactory
         string prefix = GetPrefix(rarity);
 
         // Pick a propulsion type
-        int propIndex = _random.Next(PropulsionTypes.Length);
-        var (baseName, baseSpeed, baseEnergyCost) = PropulsionTypes[propIndex];
+        int propIndex = _random.Next(_propulsionTypes.Length);
+        var (baseName, baseSpeed, baseEnergyCost) = _propulsionTypes[propIndex];
 
         // Determine module category based on propulsion type
         ModuleType propCategory = propIndex switch
@@ -322,7 +322,7 @@ public static class ItemFactory
             Name = $"{prefix} {baseName}",
             SlotType = EquipmentSlotType.Base,  // Propulsion goes in Base per requirements
             Rarity = rarity,
-            DisplayColor = RarityColors[rarity],
+            DisplayColor = _rarityColors[rarity],
             ModuleCategory = propCategory,
             IsIdentified = false,
             BootCost = 4 + (int)rarity,
@@ -343,7 +343,7 @@ public static class ItemFactory
     {
         int rarityMultiplier = (int)rarity + 1;
         string prefix = GetPrefix(rarity);
-        string baseName = StealthNames[_random.Next(StealthNames.Length)];
+        string baseName = _stealthNames[_random.Next(_stealthNames.Length)];
 
         // Noise reduction scales with rarity: -10 to -15 common, up to -40 legendary
         int noiseReduction = -10 - _random.Next(0, 6) - (8 * (int)rarity);
@@ -354,7 +354,7 @@ public static class ItemFactory
             Name = $"{prefix} {baseName}",
             SlotType = EquipmentSlotType.Utility,
             Rarity = rarity,
-            DisplayColor = RarityColors[rarity],
+            DisplayColor = _rarityColors[rarity],
             ModuleCategory = ModuleType.Sensor,  // Stealth is a sensor type
             IsIdentified = false,
             BootCost = 3 + (int)rarity,
@@ -425,7 +425,7 @@ public static class ItemFactory
             Description = "Makeshift armor plating welded together from scrap metal.",
             SlotType = EquipmentSlotType.Base,
             Rarity = ItemRarity.Common,
-            DisplayColor = RarityColors[ItemRarity.Common],
+            DisplayColor = _rarityColors[ItemRarity.Common],
             ModuleCategory = ModuleType.Cargo,  // Armor/hull is cargo type
             BonusArmor = 1,
             BonusHealth = 5,
@@ -446,7 +446,7 @@ public static class ItemFactory
             Description = "A simple power reactor providing baseline energy output.",
             SlotType = EquipmentSlotType.Core,
             Rarity = ItemRarity.Common,
-            DisplayColor = RarityColors[ItemRarity.Common],
+            DisplayColor = _rarityColors[ItemRarity.Common],
             ModuleCategory = ModuleType.Generator,
             EnergyOutput = 5,
             BootCost = 3,
@@ -466,7 +466,7 @@ public static class ItemFactory
             Description = "Standard wheeled propulsion. Nothing fancy, but reliable.",
             SlotType = EquipmentSlotType.Base,  // Propulsion goes in Base per requirements
             Rarity = ItemRarity.Common,
-            DisplayColor = RarityColors[ItemRarity.Common],
+            DisplayColor = _rarityColors[ItemRarity.Common],
             ModuleCategory = ModuleType.Legs,  // Wheels are treated as legs
             BonusSpeed = 0,
             EnergyConsumption = 2,

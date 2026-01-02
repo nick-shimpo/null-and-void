@@ -318,4 +318,128 @@ public class AccuracyCalculatorTests
     }
 
     #endregion
+
+    #region GetAccuracyColor Tests
+
+    [Fact]
+    public void GetAccuracyColor_HighAccuracy_ReturnsGreen()
+    {
+        // Arrange
+        int accuracy = 85;
+
+        // Act
+        var color = AccuracyCalculator.GetAccuracyColor(accuracy);
+
+        // Assert
+        color.R.Should().BeApproximately(0.3f, 0.01f);
+        color.G.Should().BeApproximately(1.0f, 0.01f);
+        color.B.Should().BeApproximately(0.3f, 0.01f);
+    }
+
+    [Fact]
+    public void GetAccuracyColor_MediumHighAccuracy_ReturnsYellow()
+    {
+        // Arrange
+        int accuracy = 65;
+
+        // Act
+        var color = AccuracyCalculator.GetAccuracyColor(accuracy);
+
+        // Assert
+        color.R.Should().BeApproximately(0.8f, 0.01f);
+        color.G.Should().BeApproximately(0.8f, 0.01f);
+    }
+
+    [Fact]
+    public void GetAccuracyColor_MediumLowAccuracy_ReturnsOrange()
+    {
+        // Arrange
+        int accuracy = 45;
+
+        // Act
+        var color = AccuracyCalculator.GetAccuracyColor(accuracy);
+
+        // Assert
+        color.R.Should().BeApproximately(1.0f, 0.01f);
+        color.G.Should().BeApproximately(0.6f, 0.01f);
+    }
+
+    [Fact]
+    public void GetAccuracyColor_LowAccuracy_ReturnsRed()
+    {
+        // Arrange
+        int accuracy = 30;
+
+        // Act
+        var color = AccuracyCalculator.GetAccuracyColor(accuracy);
+
+        // Assert
+        color.R.Should().BeApproximately(1.0f, 0.01f);
+        color.G.Should().BeApproximately(0.3f, 0.01f);
+    }
+
+    [Theory]
+    [InlineData(80)]
+    [InlineData(95)]
+    [InlineData(100)]
+    public void GetAccuracyColor_Threshold80Plus_ReturnsGreen(int accuracy)
+    {
+        var color = AccuracyCalculator.GetAccuracyColor(accuracy);
+        color.G.Should().BeApproximately(1.0f, 0.01f);
+    }
+
+    [Theory]
+    [InlineData(60)]
+    [InlineData(70)]
+    [InlineData(79)]
+    public void GetAccuracyColor_Between60And79_ReturnsYellow(int accuracy)
+    {
+        var color = AccuracyCalculator.GetAccuracyColor(accuracy);
+        color.R.Should().BeApproximately(0.8f, 0.01f);
+    }
+
+    [Theory]
+    [InlineData(40)]
+    [InlineData(50)]
+    [InlineData(59)]
+    public void GetAccuracyColor_Between40And59_ReturnsOrange(int accuracy)
+    {
+        var color = AccuracyCalculator.GetAccuracyColor(accuracy);
+        color.G.Should().BeApproximately(0.6f, 0.01f);
+    }
+
+    #endregion
+
+    #region AccuracyBreakdown Additional Tests
+
+    [Fact]
+    public void AccuracyBreakdown_AllModifiers_IncludesAll()
+    {
+        // Arrange
+        var breakdown = new AccuracyBreakdown
+        {
+            BaseAccuracy = 60,
+            DistanceModifier = 5,
+            TargetSizeModifier = -10,
+            TargetStateModifier = 15,
+            AttackerMovementModifier = -10,
+            CoverModifier = -20,
+            WeaponModifier = 10,
+            EquipmentModifier = 5,
+            FinalAccuracy = 55
+        };
+
+        // Act
+        var strings = breakdown.GetModifierStrings();
+
+        // Assert
+        strings.Should().HaveCount(9); // Base + 7 modifiers + Final
+        strings.Should().Contain("Target Size: -10%");
+        strings.Should().Contain("Target State: +15%");
+        strings.Should().Contain("Movement: -10%");
+        strings.Should().Contain("Weapon: +10%");
+        strings.Should().Contain("Equipment: +5%");
+    }
+
+    #endregion
 }
