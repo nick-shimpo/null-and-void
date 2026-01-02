@@ -81,11 +81,20 @@ public partial class ASCIIRenderer : Control
 
     private void OnViewportResized()
     {
-        // Recalculate layout when window is resized
-        // For now, just invalidate the buffer to trigger a redraw
+        // Safely handle viewport resize
         // The fixed-size ASCII buffer design means we can't dynamically resize
         // but we can ensure the render doesn't crash
-        _buffer?.Invalidate();
+        try
+        {
+            if (!IsInstanceValid(this))
+                return;
+
+            _buffer?.Invalidate();
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"[ASCIIRenderer] Error during resize: {ex.Message}");
+        }
     }
 
     private void CalculateOptimalFontSize()
@@ -296,6 +305,10 @@ public partial class ASCIIRenderer : Control
 
     public override void _Process(double delta)
     {
+        // Safety check - don't process if we're being destroyed
+        if (!IsInstanceValid(this) || _buffer == null)
+            return;
+
         float dt = (float)delta;
 
         // Update dancing colors in buffer

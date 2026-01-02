@@ -1,5 +1,36 @@
 # Project Guidelines for Claude
 
+## Display and Resolution Requirements
+
+**Target Resolution: 2560x1440 (QHD/1440p)**
+
+The game is optimized for 2560x1440 display:
+- ASCII buffer: 180 columns x 50 rows
+- Font size: 24px (auto-calculated to fill viewport)
+- Character dimensions: ~14px wide x 28px tall
+
+### Project Settings (project.godot)
+```
+[display]
+window/size/viewport_width=2560
+window/size/viewport_height=1440
+window/size/mode=2  # Maximized
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+```
+
+### Layout Constants (ASCIIBuffer.cs)
+- Screen: 180x50 characters
+- Map area: 149x42 characters (rows 4-45, columns 0-148)
+- Sidebar: 30 characters wide (columns 150-179)
+- Message log: 3 rows at top
+- Weapon bar: 2 rows at bottom
+- Status bar: 1 row at bottom
+
+**Important**: Do not change these resolution settings without updating the entire rendering pipeline (ASCIIBuffer, ASCIIRenderer, MapViewport, UI screens).
+
+---
+
 ## Test-Driven Development (TDD)
 
 All ongoing development work must follow a Test-Driven Development approach:
