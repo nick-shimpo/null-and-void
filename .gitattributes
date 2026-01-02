@@ -1,0 +1,36 @@
+# Auto detect text files and normalize to LF
+* text=auto eol=lf
+
+# C# files
+*.cs text eol=lf
+*.csproj text eol=lf
+*.sln text eol=lf
+
+# Config files
+*.json text eol=lf
+*.xml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Scripts
+*.sh text eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Godot files
+*.tscn text eol=lf
+*.tres text eol=lf
+*.godot text eol=lf
+*.gdshader text eol=lf
+*.gd text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
