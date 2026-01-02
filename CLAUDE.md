@@ -1,4 +1,4 @@
-# Development Skills and Practices
+# Project Guidelines for Claude
 
 ## Test-Driven Development (TDD)
 
