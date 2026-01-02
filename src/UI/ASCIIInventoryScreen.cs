@@ -786,7 +786,7 @@ public partial class ASCIIInventoryScreen : Control
 
         string energyLine = "";
         if (item.EnergyConsumption > 0)
-            energyLine = $"Energy Drain: {item.EnergyConsumption}/turn";
+            energyLine = $"Energy Consumption: {item.EnergyConsumption}/turn";
         else if (item.EnergyOutput > 0)
             energyLine = $"Energy Output: +{item.EnergyOutput}/turn";
         if (!string.IsNullOrEmpty(energyLine))
@@ -820,7 +820,7 @@ public partial class ASCIIInventoryScreen : Control
             if (item.BonusArmor != 0)
                 _buffer.WriteString(x, y++, $"ARM:  {item.BonusArmor:+#;-#;0}", item.BonusArmor > 0 ? ASCIIColors.AlertSuccess : ASCIIColors.AlertDanger);
             if (item.BonusHealth != 0)
-                _buffer.WriteString(x, y++, $"HP:   {item.BonusHealth:+#;-#;0}", item.BonusHealth > 0 ? ASCIIColors.AlertSuccess : ASCIIColors.AlertDanger);
+                _buffer.WriteString(x, y++, $"INT:  {item.BonusHealth:+#;-#;0}", item.BonusHealth > 0 ? ASCIIColors.AlertSuccess : ASCIIColors.AlertDanger);
             if (item.BonusSightRange != 0)
                 _buffer.WriteString(x, y++, $"VIS:  {item.BonusSightRange:+#;-#;0}", item.BonusSightRange > 0 ? ASCIIColors.AlertSuccess : ASCIIColors.AlertDanger);
             if (item.BonusSpeed != 0)
@@ -865,11 +865,11 @@ public partial class ASCIIInventoryScreen : Control
             }
         }
 
-        // Energy drain change
-        int drainDiff = _selectedItem.EnergyConsumption - _comparisonTarget.EnergyConsumption;
-        if (drainDiff != 0)
+        // Energy consumption change
+        int consumptionDiff = _selectedItem.EnergyConsumption - _comparisonTarget.EnergyConsumption;
+        if (consumptionDiff != 0)
         {
-            changes.Add($"DRAIN: {drainDiff:+#;-#;0}/turn");
+            changes.Add($"CONSUMPTION: {consumptionDiff:+#;-#;0}/turn");
         }
 
         // Boot cost
@@ -1107,10 +1107,10 @@ public partial class ASCIIInventoryScreen : Control
         _buffer.WriteString(x + outputLabel.Length, y++, outputBar, ASCIIColors.AlertSuccess);
 
         // Consumption
-        string drainLabel = $"Drain:   -{_equipment.TotalEnergyConsumption}/turn ";
-        string drainBar = InventoryDataFormatter.FormatEnergyBar(_equipment.TotalEnergyConsumption, maxOutput, barWidth);
-        _buffer.WriteString(x, y, drainLabel, ASCIIColors.AlertDanger);
-        _buffer.WriteString(x + drainLabel.Length, y++, drainBar, ASCIIColors.AlertDanger);
+        string consumptionLabel = $"Consumes: -{_equipment.TotalEnergyConsumption}/turn ";
+        string consumptionBar = InventoryDataFormatter.FormatEnergyBar(_equipment.TotalEnergyConsumption, maxOutput, barWidth);
+        _buffer.WriteString(x, y, consumptionLabel, ASCIIColors.AlertDanger);
+        _buffer.WriteString(x + consumptionLabel.Length, y++, consumptionBar, ASCIIColors.AlertDanger);
 
         // Balance
         int balance = _equipment.NetEnergyBalance;
@@ -1403,8 +1403,11 @@ public partial class ASCIIInventoryScreen : Control
         var rarityColor = ASCIIColors.GetRarityColor(_selectedItem.Rarity);
         string displayName = _selectedItem.GetDisplayName();
         string suffix = InventoryDataFormatter.GetItemStateSuffix(_selectedItem);
-        _buffer.WriteString(x, y, "◆ ", rarityColor);
-        _buffer.WriteString(x + 2, y++, Truncate(displayName + suffix), rarityColor);
+        string nameWithPrefix = "◆ " + displayName + suffix;
+        // Truncate to width - 1 to stay within panel bounds
+        if (nameWithPrefix.Length > width - 1)
+            nameWithPrefix = nameWithPrefix[..(width - 4)] + "...";
+        _buffer.WriteString(x, y++, nameWithPrefix, rarityColor);
 
         // Separator line
         _buffer.WriteString(x, y++, new string('═', width - 1), ASCIIColors.Border);

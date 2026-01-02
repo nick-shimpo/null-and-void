@@ -136,10 +136,10 @@ public class SeekerManager
         int damage = seeker.CalculateDamage();
         bool killed = false;
 
-        // Apply damage
+        // Apply damage - pass origin so target can locate attacker
         if (seeker.Target is Enemy enemy)
         {
-            enemy.TakeDamage(damage);
+            enemy.TakeDamage(damage, seeker.Origin);
             killed = enemy.CurrentHealth <= 0;
         }
         else if (seeker.Target is Player player)

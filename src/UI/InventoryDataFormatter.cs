@@ -99,7 +99,7 @@ public static class InventoryDataFormatter
         if (item.EnergyOutput > 0)
             energyParts.Add($"PWR +{item.EnergyOutput}");
         if (item.EnergyConsumption > 0)
-            energyParts.Add($"DRAIN -{item.EnergyConsumption}");
+            energyParts.Add($"CONSUMPTION -{item.EnergyConsumption}");
         if (item.BonusEnergyCapacity != 0)
             energyParts.Add($"CAP {FormatBonus(item.BonusEnergyCapacity)}");
         if (energyParts.Count > 0)
@@ -112,7 +112,7 @@ public static class InventoryDataFormatter
         if (item.BonusArmor != 0)
             combatParts.Add($"ARM {FormatBonus(item.BonusArmor)}");
         if (item.BonusHealth != 0)
-            combatParts.Add($"HP {FormatBonus(item.BonusHealth)}");
+            combatParts.Add($"INT {FormatBonus(item.BonusHealth)}");
         if (combatParts.Count > 0)
             lines.Add(string.Join("  ", combatParts));
 
@@ -140,7 +140,7 @@ public static class InventoryDataFormatter
         parts.Add($"Boot: {item.BootCost} NRG");
 
         if (item.EnergyConsumption > 0)
-            parts.Add($"Drain: {item.EnergyConsumption}/turn");
+            parts.Add($"Consumption: {item.EnergyConsumption}/turn");
         else if (item.EnergyOutput > 0)
             parts.Add($"Output: +{item.EnergyOutput}/turn");
 

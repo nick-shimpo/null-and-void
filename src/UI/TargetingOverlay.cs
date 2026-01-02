@@ -184,7 +184,7 @@ public class TargetingOverlay
         y++;
 
         // Health percentage
-        string healthText = $"HP: {target.CurrentHealth}/{target.MaxHealth}";
+        string healthText = $"Integrity: {target.CurrentHealth}/{target.MaxHealth}";
         _buffer.DrawString(OVERLAY_X, y, healthText, healthColor);
         y++;
 

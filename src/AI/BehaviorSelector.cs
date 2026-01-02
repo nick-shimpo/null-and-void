@@ -117,7 +117,10 @@ public class BehaviorSelector
 
         // Early termination: distant, unaware enemies just idle
         // Saves expensive behavior evaluation for enemies that won't act anyway
-        if (context.DistanceToTarget > 15 && context.Memory.AlertLevel < 5)
+        // BUT don't terminate if enemy has a known target position (e.g., from being hit)
+        if (context.DistanceToTarget > 15 &&
+            context.Memory.AlertLevel < 5 &&
+            !context.Memory.LastKnownTargetPos.HasValue)
         {
             LastExecutedBehavior = null;
             return new BehaviorResult(false, ActionCosts.Wait, "Idle (distant)");

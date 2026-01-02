@@ -56,6 +56,12 @@ public class SeekerProjectile
     public Vector2I Position { get; private set; }
 
     /// <summary>
+    /// Origin position where the seeker was launched from.
+    /// Used to alert targets about the attacker's location.
+    /// </summary>
+    public Vector2I Origin { get; }
+
+    /// <summary>
     /// Previous positions for trail visualization.
     /// </summary>
     public List<Vector2I> Trail { get; } = new();
@@ -111,6 +117,7 @@ public class SeekerProjectile
     {
         Id = _nextId++;
         Position = startPosition;
+        Origin = startPosition;
         Target = target;
         LastKnownTargetPos = target.GridPosition;
         Weapon = weapon;

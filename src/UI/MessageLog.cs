@@ -9,7 +9,7 @@ namespace NullAndVoid.UI;
 /// </summary>
 public partial class MessageLog : Control
 {
-    [Export] public int MaxMessages { get; set; } = 5;
+    [Export] public int MaxMessages { get; set; } = 15;
 
     private Panel? _panel;
     private VBoxContainer? _container;

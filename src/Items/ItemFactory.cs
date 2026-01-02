@@ -216,15 +216,15 @@ public static class ItemFactory
                 }
                 else
                 {
-                    item.BonusHealth = _random.Next(3, 8) * rarityMultiplier;
-                    // Structural integrity doesn't need power
+                    // Structural reinforcement provides armor, not integrity
+                    item.BonusArmor = _random.Next(2, 4) * rarityMultiplier;
                 }
                 break;
 
             case EquipmentSlotType.Base:
                 // Base modules focus on defense - passive (no energy cost)
-                item.BonusArmor = _random.Next(1, 3) * rarityMultiplier;
-                item.BonusHealth = _random.Next(2, 6) * rarityMultiplier;
+                // Provides higher armor since no other stats
+                item.BonusArmor = _random.Next(2, 5) * rarityMultiplier;
                 break;
         }
     }
@@ -421,14 +421,13 @@ public static class ItemFactory
         return new Item
         {
             Name = "Scrap Plating",
-            ShortDesc = "ARM +1 INT +5",
+            ShortDesc = "ARM +3",
             Description = "Makeshift armor plating welded together from scrap metal.",
             SlotType = EquipmentSlotType.Base,
             Rarity = ItemRarity.Common,
             DisplayColor = _rarityColors[ItemRarity.Common],
             ModuleCategory = ModuleType.Cargo,  // Armor/hull is cargo type
-            BonusArmor = 1,
-            BonusHealth = 5,
+            BonusArmor = 3,  // Provides flat damage reduction
             BootCost = 2,
             IsIdentified = true  // Starter items are pre-identified
         };

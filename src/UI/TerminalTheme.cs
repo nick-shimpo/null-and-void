@@ -48,7 +48,7 @@ public static class TerminalTheme
     public static readonly Color RarityLegendary = new(1.0f, 0.7f, 0.2f);
 
     /// <summary>
-    /// Format a status display like [HP: 100]
+    /// Format a status display like [Integrity: 100]
     /// </summary>
     public static string FormatStatus(string label, string value)
         => $"[{label}: {value}]";
@@ -82,7 +82,7 @@ public static class TerminalTheme
         if (armor > 0)
             parts.Add($"[ARM +{armor}]");
         if (health > 0)
-            parts.Add($"[HP +{health}]");
+            parts.Add($"[INT +{health}]");
         if (sight > 0)
             parts.Add($"[SIG +{sight}]");
         return parts.Count > 0 ? string.Join(" ", parts) : "[NO STATS]";

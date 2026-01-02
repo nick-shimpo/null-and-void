@@ -67,6 +67,12 @@ public partial class Item : Resource
     public int CurrentModuleArmor { get; set; } = 10;
 
     /// <summary>
+    /// Whether this module's armor has been initialized.
+    /// Prevents re-initialization on re-equip (which would repair the module).
+    /// </summary>
+    public bool ArmorInitialized { get; private set; } = false;
+
+    /// <summary>
     /// Whether this module is disabled (armor depleted).
     /// </summary>
     public bool IsDisabled => CurrentModuleArmor <= 0;
@@ -81,10 +87,25 @@ public partial class Item : Resource
 
     /// <summary>
     /// Initialize module armor to max value.
+    /// Only initializes once - subsequent calls are ignored to preserve damage state.
     /// </summary>
     public void InitializeArmor()
     {
+        if (!ArmorInitialized)
+        {
+            CurrentModuleArmor = MaxModuleArmor;
+            ArmorInitialized = true;
+        }
+    }
+
+    /// <summary>
+    /// Fully repair this module's armor to maximum.
+    /// Use this for repair kits - bypasses the initialization check.
+    /// </summary>
+    public void FullyRepairModule()
+    {
         CurrentModuleArmor = MaxModuleArmor;
+        ArmorInitialized = true;
     }
 
     /// <summary>
@@ -198,6 +219,12 @@ public partial class Item : Resource
     [Export] public int BonusNoise { get; set; } = 0;
 
     /// <summary>
+    /// Bonus mount points provided by cargo expansion modules.
+    /// Allows additional equipment slots when equipped.
+    /// </summary>
+    [Export] public int BonusMountPoints { get; set; } = 0;
+
+    /// <summary>
     /// Whether this module can be toggled on/off.
     /// </summary>
     [Export] public bool IsToggleable { get; set; } = false;
@@ -265,6 +292,7 @@ public partial class Item : Resource
             BonusEnergyCapacity = BonusEnergyCapacity,
             BonusSpeed = BonusSpeed,
             BonusNoise = BonusNoise,
+            BonusMountPoints = BonusMountPoints,
             IsToggleable = IsToggleable,
             IsActive = true,  // New items start active
             WeaponData = WeaponData?.Clone(),  // Clone weapon data if present
@@ -354,6 +382,10 @@ public partial class Item : Resource
             stats.Add($"SPD {FormatBonus(BonusSpeed)}");
         if (BonusNoise != 0)
             stats.Add($"NSE {FormatBonus(BonusNoise)}");
+
+        // Cargo expansion
+        if (BonusMountPoints != 0)
+            stats.Add($"SLOTS {FormatBonus(BonusMountPoints)}");
 
         return stats.Count > 0 ? string.Join(" ", stats) : "No stats";
     }

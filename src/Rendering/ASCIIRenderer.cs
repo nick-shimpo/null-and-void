@@ -62,9 +62,30 @@ public partial class ASCIIRenderer : Control
         // Create and configure the RichTextLabel
         CreateTextLabel();
 
+        // Connect to viewport size changed signal for resize handling
+        GetTree().Root.SizeChanged += OnViewportResized;
+
         // Initial render
         _buffer.Invalidate();
         Render();
+    }
+
+    public override void _ExitTree()
+    {
+        // Disconnect from viewport resize signal
+        if (GetTree()?.Root != null)
+        {
+            GetTree().Root.SizeChanged -= OnViewportResized;
+        }
+    }
+
+    private void OnViewportResized()
+    {
+        // Recalculate layout when window is resized
+        // For now, just invalidate the buffer to trigger a redraw
+        // The fixed-size ASCII buffer design means we can't dynamically resize
+        // but we can ensure the render doesn't crash
+        _buffer?.Invalidate();
     }
 
     private void CalculateOptimalFontSize()

@@ -65,6 +65,9 @@ public partial class Equipment : Node
     public int TotalBonusSpeed { get; private set; }
     public int TotalBonusNoise { get; private set; }
 
+    // Cargo expansion stats
+    public int TotalBonusMountPoints { get; private set; }
+
     // Derived energy values
     public int NetEnergyBalance => TotalEnergyOutput - TotalEnergyConsumption;
     public bool HasEnergyDeficit => NetEnergyBalance < 0;
@@ -417,6 +420,7 @@ public partial class Equipment : Node
         TotalBonusEnergyCapacity = 0;
         TotalBonusSpeed = 0;
         TotalBonusNoise = 0;
+        TotalBonusMountPoints = 0;
 
         foreach (var item in GetAllEquippedItems())
         {
@@ -432,6 +436,9 @@ public partial class Equipment : Node
             // Combat stats always apply (structural bonuses) for non-disabled modules
             TotalBonusArmor += item.BonusArmor;
             TotalBonusHealth += item.BonusHealth;
+
+            // Cargo expansion always applies (passive structural)
+            TotalBonusMountPoints += item.BonusMountPoints;
 
             // Energy capacity always applies (it's passive storage) for non-disabled modules
             TotalBonusEnergyCapacity += item.BonusEnergyCapacity;
@@ -449,9 +456,10 @@ public partial class Equipment : Node
         }
 
         // Update Attributes component if linked
+        // Note: Passing 0 for integrity - modules should NOT provide integrity, only armor
         _attributes?.RecalculateFromEquipment(
             TotalEnergyOutput, TotalEnergyConsumption, TotalBonusEnergyCapacity,
-            TotalBonusHealth, TotalBonusArmor, TotalBonusDamage,
+            0, TotalBonusArmor, TotalBonusDamage,
             TotalBonusSpeed, TotalBonusSightRange, TotalBonusNoise);
     }
 
