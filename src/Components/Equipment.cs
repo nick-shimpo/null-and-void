@@ -72,6 +72,44 @@ public partial class Equipment : Node
     public int NetEnergyBalance => TotalEnergyOutput - TotalEnergyConsumption;
     public bool HasEnergyDeficit => NetEnergyBalance < 0;
 
+    #region Shield System
+
+    /// <summary>
+    /// Current shield points (energy shielding pool).
+    /// Absorbs all damage before module armor.
+    /// </summary>
+    public int CurrentShield { get; private set; } = 0;
+
+    /// <summary>
+    /// Maximum shield capacity from all equipped shield generators.
+    /// </summary>
+    public int MaxShield { get; private set; } = 0;
+
+    /// <summary>
+    /// Total shield points generated per turn from active shield modules.
+    /// </summary>
+    public int TotalShieldOutput { get; private set; } = 0;
+
+    /// <summary>
+    /// Total energy cost per turn for shield generation.
+    /// </summary>
+    public int TotalShieldEnergyCost { get; private set; } = 0;
+
+    /// <summary>
+    /// Whether shields are currently active (have points).
+    /// </summary>
+    public bool HasActiveShield => CurrentShield > 0;
+
+    /// <summary>
+    /// Shield percentage for display.
+    /// </summary>
+    public float ShieldPercent => MaxShield > 0 ? (float)CurrentShield / MaxShield : 0f;
+
+    [Signal] public delegate void ShieldChangedEventHandler(int current, int max);
+    [Signal] public delegate void ShieldDepletedEventHandler();
+
+    #endregion
+
     /// <summary>
     /// Set the Attributes component to update when equipment changes.
     /// Also connects energy depletion handling.
@@ -422,6 +460,11 @@ public partial class Equipment : Node
         TotalBonusNoise = 0;
         TotalBonusMountPoints = 0;
 
+        // Reset shield stats
+        MaxShield = 0;
+        TotalShieldOutput = 0;
+        TotalShieldEnergyCost = 0;
+
         foreach (var item in GetAllEquippedItems())
         {
             // Disabled modules (armor destroyed) provide NO benefits
@@ -452,7 +495,19 @@ public partial class Equipment : Node
                 TotalEnergyConsumption += item.EnergyConsumption;
                 TotalBonusSpeed += item.BonusSpeed;
                 TotalBonusNoise += item.BonusNoise;
+
+                // Shield generator stats (only when active)
+                MaxShield += item.ShieldCapacity;
+                TotalShieldOutput += item.ShieldOutput;
+                TotalShieldEnergyCost += item.ShieldEnergyCost;
             }
+        }
+
+        // Cap current shield if max decreased
+        if (CurrentShield > MaxShield)
+        {
+            CurrentShield = MaxShield;
+            EmitSignal(SignalName.ShieldChanged, CurrentShield, MaxShield);
         }
 
         // Update Attributes component if linked
@@ -650,8 +705,8 @@ public partial class Equipment : Node
     #region Module Damage System
 
     /// <summary>
-    /// Route incoming damage to equipped modules based on mount point exposure.
-    /// Shield modules absorb damage first, then weighted by mount category.
+    /// Route incoming damage to equipped modules based on exposure ratings.
+    /// Higher exposure = more likely to be hit. Armor modules tank for others.
     /// Returns damage that passes through to core integrity.
     /// </summary>
     public int RouteDamageToModules(int damage)
@@ -659,9 +714,9 @@ public partial class Equipment : Node
         if (damage <= 0)
             return 0;
 
-        // Shield modules absorb damage first (always hit first)
+        // Shield modules (ModuleType.Shield) absorb damage first
         var shieldModules = GetAllEquippedItems()
-            .Where(i => i.Name.Contains("Shield") && !i.IsDisabled)
+            .Where(i => i.ModuleCategory == ModuleType.Shield && !i.IsDisabled)
             .ToList();
 
         foreach (var shield in shieldModules)
@@ -671,51 +726,95 @@ public partial class Equipment : Node
                 return 0;
         }
 
-        // Weighted hit location: Core 20%, Utility 40%, Base 40%
-        int roll = _random.Next(100);
-        EquipmentSlotType targetSlotType;
+        // Get all non-disabled, non-shield modules with exposure
+        var modules = GetAllEquippedItems()
+            .Where(m => !m.IsDisabled && m.ModuleCategory != ModuleType.Shield)
+            .ToList();
 
-        if (roll < 20)
-            targetSlotType = EquipmentSlotType.Core;
-        else if (roll < 60)
-            targetSlotType = EquipmentSlotType.Utility;
-        else
-            targetSlotType = EquipmentSlotType.Base;
+        if (modules.Count == 0)
+            return damage;
 
-        // Get a random non-disabled module from that slot type
-        var slots = GetSlotArray(targetSlotType);
-        if (slots != null)
+        // Weighted selection by exposure rating
+        int totalExposure = modules.Sum(m => m.Exposure);
+        if (totalExposure <= 0)
+            return damage;
+
+        int roll = _random.Next(totalExposure);
+        Item? targetModule = null;
+        int cumulative = 0;
+
+        foreach (var module in modules)
         {
-            var validModules = new List<(Item item, int index)>();
-            for (int i = 0; i < slots.Length; i++)
+            cumulative += module.Exposure;
+            if (roll < cumulative)
             {
-                if (slots[i] != null && !slots[i]!.IsDisabled)
-                    validModules.Add((slots[i]!, i));
-            }
-
-            if (validModules.Count > 0)
-            {
-                var (targetModule, slotIndex) = validModules[_random.Next(validModules.Count)];
-                int previousArmor = targetModule.CurrentModuleArmor;
-                damage = targetModule.TakeModuleDamage(damage);
-
-                GD.Print($"Module {targetModule.Name} took {previousArmor - targetModule.CurrentModuleArmor} damage");
-
-                // Check if module was destroyed
-                if (targetModule.IsDisabled)
-                {
-                    // 15% chance to damage mount point
-                    if (_random.NextDouble() < MountDamageOnDestroyChance)
-                    {
-                        DamageMountPoint(targetSlotType, slotIndex);
-                    }
-
-                    RecalculateStats();
-                }
+                targetModule = module;
+                break;
             }
         }
 
+        if (targetModule == null)
+            return damage;
+
+        // Apply damage to target module
+        int previousArmor = targetModule.CurrentModuleArmor;
+        damage = targetModule.TakeModuleDamage(damage);
+
+        GD.Print($"Module {targetModule.Name} took {previousArmor - targetModule.CurrentModuleArmor} damage (Exposure: {targetModule.Exposure})");
+
+        // Check if module was destroyed
+        if (targetModule.IsDisabled)
+        {
+            // Find which slot this module is in for mount damage check
+            CheckMountDamageOnDestroy(targetModule);
+            RecalculateStats();
+        }
+
+        // Armor module tank behavior: if still functional after hit, redirect excess damage
+        if (targetModule.ModuleCategory == ModuleType.Armor
+            && !targetModule.IsDisabled
+            && damage > 0)
+        {
+            // Armor module tanks for others - recursively route remaining damage
+            return RouteDamageToModules(damage);
+        }
+
         return damage;
+    }
+
+    /// <summary>
+    /// Check if mount point should be damaged when a module is destroyed.
+    /// </summary>
+    private void CheckMountDamageOnDestroy(Item destroyedModule)
+    {
+        // Find the slot containing this module
+        for (int i = 0; i < _coreSlots.Length; i++)
+        {
+            if (_coreSlots[i] == destroyedModule)
+            {
+                if (_random.NextDouble() < MountDamageOnDestroyChance)
+                    DamageMountPoint(EquipmentSlotType.Core, i);
+                return;
+            }
+        }
+        for (int i = 0; i < _utilitySlots.Length; i++)
+        {
+            if (_utilitySlots[i] == destroyedModule)
+            {
+                if (_random.NextDouble() < MountDamageOnDestroyChance)
+                    DamageMountPoint(EquipmentSlotType.Utility, i);
+                return;
+            }
+        }
+        for (int i = 0; i < _baseSlots.Length; i++)
+        {
+            if (_baseSlots[i] == destroyedModule)
+            {
+                if (_random.NextDouble() < MountDamageOnDestroyChance)
+                    DamageMountPoint(EquipmentSlotType.Base, i);
+                return;
+            }
+        }
     }
 
     /// <summary>
@@ -730,6 +829,70 @@ public partial class Equipment : Node
         EmitSignal(SignalName.ModuleIdentified, module);
         GD.Print($"Analyzer identified: {module.Name}");
         return true;
+    }
+
+    #endregion
+
+    #region Shield System Methods
+
+    /// <summary>
+    /// Process shield regeneration each turn.
+    /// Consumes energy from reserves and regenerates shield points.
+    /// Called by player during turn start.
+    /// </summary>
+    public void ProcessShieldTick()
+    {
+        if (TotalShieldOutput <= 0 || _attributes == null)
+            return;
+
+        // Check if we can afford the energy cost
+        if (TotalShieldEnergyCost > 0)
+        {
+            if (!_attributes.TryConsumeEnergy(TotalShieldEnergyCost))
+            {
+                // Can't afford shield generation this turn
+                GD.Print("Insufficient energy for shield generation");
+                return;
+            }
+        }
+
+        // Regenerate shields up to max capacity
+        int previousShield = CurrentShield;
+        CurrentShield = System.Math.Min(MaxShield, CurrentShield + TotalShieldOutput);
+
+        if (CurrentShield != previousShield)
+        {
+            EmitSignal(SignalName.ShieldChanged, CurrentShield, MaxShield);
+            GD.Print($"Shield regenerated: {previousShield} -> {CurrentShield}/{MaxShield}");
+        }
+    }
+
+    /// <summary>
+    /// Absorb damage with energy shields first.
+    /// Returns damage that passes through to modules/integrity.
+    /// </summary>
+    public int AbsorbDamageWithShield(int damage)
+    {
+        if (CurrentShield <= 0 || damage <= 0)
+            return damage;
+
+        int absorbed = System.Math.Min(damage, CurrentShield);
+        CurrentShield -= absorbed;
+        int remaining = damage - absorbed;
+
+        EmitSignal(SignalName.ShieldChanged, CurrentShield, MaxShield);
+
+        if (CurrentShield <= 0)
+        {
+            EmitSignal(SignalName.ShieldDepleted);
+            GD.Print("Shields depleted!");
+        }
+        else
+        {
+            GD.Print($"Shield absorbed {absorbed} damage ({CurrentShield}/{MaxShield} remaining)");
+        }
+
+        return remaining;
     }
 
     #endregion

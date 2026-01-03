@@ -36,6 +36,17 @@ public partial class Item : Resource
     [Export] public ItemType Type { get; set; } = ItemType.Module;
 
     /// <summary>
+    /// The specific consumable type (Analyzer, Repair Kit, Energy Cell, etc.).
+    /// Only relevant when Type is Consumable.
+    /// </summary>
+    [Export] public ConsumableType ConsumableCategory { get; set; } = ConsumableType.None;
+
+    /// <summary>
+    /// The value/amount for consumable effects (e.g., energy restored, repair amount).
+    /// </summary>
+    [Export] public int ConsumableValue { get; set; } = 0;
+
+    /// <summary>
     /// The specific module type (Weapon, Shield, Generator, etc.).
     /// Determines which mount slots can accept this module.
     /// Always visible even when unidentified.
@@ -57,14 +68,15 @@ public partial class Item : Resource
     /// <summary>
     /// Maximum armor rating of this module.
     /// Module absorbs damage before core integrity.
+    /// Varies by rarity: Common=8, Uncommon=11, Rare=14, Epic=17, Legendary=20.
     /// </summary>
-    [Export] public int MaxModuleArmor { get; set; } = 10;
+    [Export] public int MaxModuleArmor { get; set; } = 8;
 
     /// <summary>
     /// Current armor remaining on this module.
     /// When 0, module is disabled.
     /// </summary>
-    public int CurrentModuleArmor { get; set; } = 10;
+    public int CurrentModuleArmor { get; set; } = 8;
 
     /// <summary>
     /// Whether this module's armor has been initialized.
@@ -84,6 +96,14 @@ public partial class Item : Resource
     [Export] public int FireResistance { get; set; } = 50;
     [Export] public int EMPResistance { get; set; } = 50;
     [Export] public int ExplosiveResistance { get; set; } = 50;
+
+    /// <summary>
+    /// Exposure rating determining hit likelihood in combat.
+    /// Higher = more likely to be targeted. Armor modules have high exposure
+    /// to "tank" damage for other modules.
+    /// Default 10 = baseline exposure.
+    /// </summary>
+    [Export] public int Exposure { get; set; } = 10;
 
     /// <summary>
     /// Initialize module armor to max value.
@@ -240,6 +260,114 @@ public partial class Item : Resource
     /// </summary>
     public int NetEnergyImpact => IsActive ? EnergyOutput - EnergyConsumption : 0;
 
+    #region Shield Generator Properties
+
+    /// <summary>
+    /// Shield points generated per turn when module is active.
+    /// Only applies to Shield type modules with this value > 0.
+    /// </summary>
+    [Export] public int ShieldOutput { get; set; } = 0;
+
+    /// <summary>
+    /// Contribution to maximum shield pool capacity.
+    /// Total capacity = sum of all equipped shield generator capacities.
+    /// </summary>
+    [Export] public int ShieldCapacity { get; set; } = 0;
+
+    /// <summary>
+    /// Energy cost per turn to maintain shield generation.
+    /// Consumed from energy reserves each turn when shields are active.
+    /// </summary>
+    [Export] public int ShieldEnergyCost { get; set; } = 0;
+
+    /// <summary>
+    /// Whether this is an active shield generator (vs passive armor module).
+    /// </summary>
+    public bool IsShieldGenerator => ModuleCategory == ModuleType.Shield && ShieldOutput > 0;
+
+    #endregion
+
+    #region Active Ability Properties
+
+    /// <summary>
+    /// Whether this module has an activatable ability.
+    /// </summary>
+    [Export] public bool HasActiveAbility { get; set; } = false;
+
+    /// <summary>
+    /// Name of the active ability for display.
+    /// </summary>
+    [Export] public string AbilityName { get; set; } = "";
+
+    /// <summary>
+    /// Description of what the ability does.
+    /// </summary>
+    [Export] public string AbilityDescription { get; set; } = "";
+
+    /// <summary>
+    /// Energy cost to activate the ability.
+    /// </summary>
+    [Export] public int AbilityEnergyCost { get; set; } = 0;
+
+    /// <summary>
+    /// Cooldown in turns between ability uses.
+    /// </summary>
+    [Export] public int AbilityCooldown { get; set; } = 0;
+
+    /// <summary>
+    /// Current cooldown remaining. Runtime state.
+    /// </summary>
+    public int CurrentAbilityCooldown { get; set; } = 0;
+
+    /// <summary>
+    /// Whether the ability is ready to use.
+    /// </summary>
+    public bool IsAbilityReady => HasActiveAbility && CurrentAbilityCooldown <= 0;
+
+    /// <summary>
+    /// Radius of the ability effect (for AoE abilities).
+    /// </summary>
+    [Export] public int AbilityRadius { get; set; } = 0;
+
+    /// <summary>
+    /// Primary effect applied by the ability.
+    /// </summary>
+    [Export] public WeaponEffect AbilityEffect { get; set; } = WeaponEffect.None;
+
+    /// <summary>
+    /// Duration of the ability effect in turns.
+    /// </summary>
+    [Export] public int AbilityEffectDuration { get; set; } = 0;
+
+    /// <summary>
+    /// Knockback distance for knockback abilities.
+    /// </summary>
+    [Export] public int AbilityKnockback { get; set; } = 0;
+
+    /// <summary>
+    /// Damage dealt by the ability (if any).
+    /// </summary>
+    [Export] public int AbilityDamage { get; set; } = 0;
+
+    /// <summary>
+    /// Start the ability cooldown after use.
+    /// </summary>
+    public void StartAbilityCooldown()
+    {
+        CurrentAbilityCooldown = AbilityCooldown;
+    }
+
+    /// <summary>
+    /// Tick the ability cooldown by one turn.
+    /// </summary>
+    public void TickAbilityCooldown()
+    {
+        if (CurrentAbilityCooldown > 0)
+            CurrentAbilityCooldown--;
+    }
+
+    #endregion
+
     #region Weapon Properties
 
     /// <summary>
@@ -298,13 +426,31 @@ public partial class Item : Resource
             WeaponData = WeaponData?.Clone(),  // Clone weapon data if present
             // Identification system
             Type = Type,
+            ConsumableCategory = ConsumableCategory,
+            ConsumableValue = ConsumableValue,
             ModuleCategory = ModuleCategory,
             IsIdentified = IsIdentified,
             BootCost = BootCost,
             MaxModuleArmor = MaxModuleArmor,
             FireResistance = FireResistance,
             EMPResistance = EMPResistance,
-            ExplosiveResistance = ExplosiveResistance
+            ExplosiveResistance = ExplosiveResistance,
+            Exposure = Exposure,
+            // Shield generator properties
+            ShieldOutput = ShieldOutput,
+            ShieldCapacity = ShieldCapacity,
+            ShieldEnergyCost = ShieldEnergyCost,
+            // Active ability properties
+            HasActiveAbility = HasActiveAbility,
+            AbilityName = AbilityName,
+            AbilityDescription = AbilityDescription,
+            AbilityEnergyCost = AbilityEnergyCost,
+            AbilityCooldown = AbilityCooldown,
+            AbilityRadius = AbilityRadius,
+            AbilityEffect = AbilityEffect,
+            AbilityEffectDuration = AbilityEffectDuration,
+            AbilityKnockback = AbilityKnockback,
+            AbilityDamage = AbilityDamage
         };
         clone.InitializeArmor();
         return clone;
@@ -367,11 +513,22 @@ public partial class Item : Resource
         if (BonusEnergyCapacity != 0)
             stats.Add($"CAP {FormatBonus(BonusEnergyCapacity)}");
 
+        // Shield generator stats
+        if (ShieldOutput > 0)
+            stats.Add($"SHD {ShieldOutput}/t");
+        if (ShieldCapacity > 0)
+            stats.Add($"CAP {ShieldCapacity}");
+        if (ShieldEnergyCost > 0)
+            stats.Add($"USE -{ShieldEnergyCost}/t");
+
         // Non-weapon combat stats (passive bonuses)
         if (WeaponData == null && BonusDamage != 0)
             stats.Add($"DMG {FormatBonus(BonusDamage)}");
         if (BonusArmor != 0)
             stats.Add($"ARM {FormatBonus(BonusArmor)}");
+        // Show exposure for armor modules (high = tanks damage)
+        if (ModuleCategory == ModuleType.Armor)
+            stats.Add($"EXP {Exposure}");
         if (BonusHealth != 0)
             stats.Add($"INT {FormatBonus(BonusHealth)}");
         if (BonusSightRange != 0)
@@ -470,6 +627,27 @@ public enum ItemType
 }
 
 /// <summary>
+/// Types of consumable items and their effects.
+/// </summary>
+public enum ConsumableType
+{
+    /// <summary>Not a consumable or unspecified.</summary>
+    None,
+    /// <summary>Identifies an unidentified module.</summary>
+    Analyzer,
+    /// <summary>Repairs module armor (integrity).</summary>
+    ModuleRepair,
+    /// <summary>Repairs damaged mount points.</summary>
+    MountRepair,
+    /// <summary>Restores energy to reserves.</summary>
+    EnergyCell,
+    /// <summary>Restores health/integrity.</summary>
+    HealthPack,
+    /// <summary>Temporary speed buff.</summary>
+    Stimulant
+}
+
+/// <summary>
 /// Specific module type categories per Module Requirements document.
 /// Determines which mount slots can accept this module.
 /// </summary>
@@ -531,7 +709,20 @@ public enum ModuleType
     /// <summary>
     /// Storage/cargo modules. Base mount only.
     /// </summary>
-    Cargo
+    Cargo,
+
+    // === SPECIALIZED TYPES ===
+    /// <summary>
+    /// Armor plating modules. Can be mounted in Core or Base slots.
+    /// Provides high damage reduction but reduces speed.
+    /// </summary>
+    Armor,
+
+    /// <summary>
+    /// Active utility modules with cooldown abilities.
+    /// Utility mount only. Has special activated effects.
+    /// </summary>
+    UtilityActive
 }
 
 /// <summary>
@@ -552,10 +743,12 @@ public static class ModuleTypeExtensions
             ModuleType.Weapon => EquipmentSlotType.Utility,
             ModuleType.Sensor => EquipmentSlotType.Utility,
             ModuleType.Shield => EquipmentSlotType.Utility,
+            ModuleType.UtilityActive => EquipmentSlotType.Utility,
             ModuleType.Treads => EquipmentSlotType.Base,
             ModuleType.Legs => EquipmentSlotType.Base,
             ModuleType.Flight => EquipmentSlotType.Base,
             ModuleType.Cargo => EquipmentSlotType.Base,
+            ModuleType.Armor => EquipmentSlotType.Any,  // Armor can go in Core or Base
             _ => EquipmentSlotType.Any
         };
     }
@@ -567,6 +760,10 @@ public static class ModuleTypeExtensions
     {
         if (moduleType == ModuleType.None)
             return true; // No restriction
+
+        // Armor can be mounted in Core or Base slots only
+        if (moduleType == ModuleType.Armor)
+            return slotType == EquipmentSlotType.Core || slotType == EquipmentSlotType.Base;
 
         return moduleType.GetRequiredSlotType() == slotType;
     }
@@ -584,10 +781,12 @@ public static class ModuleTypeExtensions
             ModuleType.Weapon => "Weapon",
             ModuleType.Sensor => "Sensor",
             ModuleType.Shield => "Shield",
+            ModuleType.UtilityActive => "Utility Device",
             ModuleType.Treads => "Treads",
             ModuleType.Legs => "Legs",
             ModuleType.Flight => "Flight System",
             ModuleType.Cargo => "Cargo Module",
+            ModuleType.Armor => "Armor Plating",
             _ => "Unknown Module"
         };
     }
