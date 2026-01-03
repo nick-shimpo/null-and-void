@@ -24,6 +24,11 @@ public class EnergyScheduler
     public const int STANDARD_ACTION_COST = 100;
     public const int BASE_TICK_ENERGY = 100;
 
+    /// <summary>
+    /// Set to true to disable GD.Print logging (for unit tests).
+    /// </summary>
+    public static bool SuppressLogging { get; set; } = false;
+
     private readonly SortedDictionary<long, List<IScheduledActor>> _schedule = new();
     private readonly Dictionary<IScheduledActor, long> _actorNextActionTime = new();
     private readonly Dictionary<IScheduledActor, int> _actorAccumulatedEnergy = new();
@@ -32,6 +37,12 @@ public class EnergyScheduler
 
     public long CurrentTick => _currentTick;
     public int ActorCount => _actorNextActionTime.Count;
+
+    private static void Log(string message)
+    {
+        if (!SuppressLogging)
+            GD.Print(message);
+    }
 
     /// <summary>
     /// Register an actor to participate in scheduling.
@@ -44,7 +55,7 @@ public class EnergyScheduler
         _actorAccumulatedEnergy[actor] = 0;
         ScheduleActorNextTurn(actor, _currentTick);
 
-        GD.Print($"[EnergyScheduler] Registered: {actor.ActorName} (Speed: {actor.Speed})");
+        Log($"[EnergyScheduler] Registered: {actor.ActorName} (Speed: {actor.Speed})");
     }
 
     /// <summary>
@@ -67,7 +78,7 @@ public class EnergyScheduler
         _actorNextActionTime.Remove(actor);
         _actorAccumulatedEnergy.Remove(actor);
 
-        GD.Print($"[EnergyScheduler] Unregistered: {actor.ActorName}");
+        Log($"[EnergyScheduler] Unregistered: {actor.ActorName}");
     }
 
     /// <summary>
@@ -229,7 +240,7 @@ public class EnergyScheduler
         _actorAccumulatedEnergy.Clear();
         _currentTick = 0;
 
-        GD.Print("[EnergyScheduler] Reset");
+        Log("[EnergyScheduler] Reset");
     }
 
     /// <summary>
@@ -278,7 +289,7 @@ public class EnergyScheduler
             // Stop if we've reached or passed the target tick
             if (nextTick >= targetTick)
             {
-                GD.Print($"[EnergyScheduler] Stopping at tick {nextTick} (target: {targetTick})");
+                Log($"[EnergyScheduler] Stopping at tick {nextTick} (target: {targetTick})");
                 break;
             }
 
@@ -329,7 +340,7 @@ public class EnergyScheduler
             }
         }
 
-        GD.Print($"[EnergyScheduler] Processed {actionsProcessed} actions before tick {targetTick}");
+        Log($"[EnergyScheduler] Processed {actionsProcessed} actions before tick {targetTick}");
 
         // Play batched animations after all enemy computations complete
         await TurnAnimator.Instance.PlayAnimations();

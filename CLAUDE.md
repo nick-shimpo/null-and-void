@@ -42,6 +42,17 @@ All ongoing development work must follow a Test-Driven Development approach:
    - **Refactor**: Improve the code while keeping tests green
 3. **Test coverage requirement**: Maintain a consistent **70%+ test coverage** after every build
 
+### Bug Fix Testing Policy
+
+**Every bug fix must include a unit test.** When a bug is reported:
+
+1. **Write a test that reproduces the bug** - Create a failing test that demonstrates the buggy behavior
+2. **Fix the bug** - Implement the minimal fix to make the test pass
+3. **Verify the test passes** - Ensure the fix resolves the issue
+4. **Prevent regression** - The test will catch if the bug is reintroduced in the future
+
+This ensures bugs don't recur and documents the expected behavior for future developers.
+
 ## Coverage Requirements
 
 - The CI/CD pipeline enforces a minimum 70% code coverage threshold
@@ -88,3 +99,47 @@ dotnet format NullAndVoid.sln --verify-no-changes --exclude NullAndVoid.Tests/
 3. Use FluentAssertions for readable assertions
 4. Use `TestRandom` helper for deterministic random number testing
 5. Follow the naming convention: `MethodName_Scenario_ExpectedResult`
+
+---
+
+## Item Configuration Schema
+
+**IMPORTANT**: All game items are defined in `data/items.json`. This is the master definition file for game balancing.
+
+### When to Update items.json
+
+Always consider updating the item configuration when:
+- Adding new item types or categories
+- Modifying item stats (damage, armor, energy costs)
+- Adding new item properties or abilities
+- Balancing existing items
+- Adding new rarity tiers or drop rates
+
+### Schema Structure
+
+```
+data/items.json
+├── moduleArmorByRarity - Armor values per rarity (Common=8 to Legendary=20)
+├── rarityColors - Display colors for each rarity
+├── starterItems - Predefined starter equipment
+├── moduleTemplates - Templates for procedural generation
+│   ├── powerSources - Energy generators
+│   ├── batteries - Energy storage
+│   ├── propulsion - Movement modules
+│   └── stealth - Noise reduction
+├── slotTypeModules - Per-slot module definitions
+├── rarityPrefixes - Name prefixes per rarity
+├── rarityDropRates - Loot drop percentages
+├── consumables - Single-use items
+└── resistanceDefaults - Default damage resistances
+```
+
+### Code Integration
+
+- `ItemDefinitions.cs` - Loads and provides access to configuration
+- `ItemFactory.cs` - Uses configuration for item creation
+- Call `ItemDefinitions.Load()` during game initialization
+
+### Hot Reloading
+
+Call `ItemDefinitions.Reload()` to reload configuration during development without restarting the game.
